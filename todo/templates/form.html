@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% import "_macros.html" as ui with context %}
 {% set heading = 'Edit task' if task else 'New task' %}
 
 {% block title %}{{ heading }} · {% endblock %}
@@ -105,10 +106,83 @@
     </div>
   </div>
 
+  {# Radio buttons styled as emoji tiles: the real button is hidden, and
+     "input:checked + span" in style.css rings the chosen one. #}
+  <fieldset class="field emoji-picker{% if errors.emoji %} has-error{% endif %}"
+            {% if errors.emoji %}aria-describedby="emoji-error"{% endif %}>
+    <legend>Emoji <span class="hint">(optional)</span></legend>
+    <label class="emoji-option">
+      <input class="visually-hidden" type="radio" name="emoji" value="" {% if not form.get('emoji') %}checked{% endif %}>
+      <span aria-hidden="true">∅</span><span class="visually-hidden">No emoji</span>
+    </label>
+    {% set current_emoji = form.get('emoji') or '' %}
+    {# An emoji typed in quick add may not be in the list. Show it too, so saving keeps it. #}
+    {% set choices = emoji_choices if not current_emoji or current_emoji in emoji_choices else [current_emoji] + emoji_choices %}
+    {% for emoji in choices %}
+      <label class="emoji-option">
+        <input class="visually-hidden" type="radio" name="emoji" value="{{ emoji }}" {% if current_emoji == emoji %}checked{% endif %}>
+        <span>{{ emoji }}</span>
+      </label>
+    {% endfor %}
+    {% if errors.emoji %}<p class="error" id="emoji-error">{{ errors.emoji }}</p>{% endif %}
+  </fieldset>
+
+  <div class="field">
+    {# A checkbox only sends its value when ticked. validate_task() reads "nothing" as normal priority. #}
+    <label class="check-row">
+      <input type="checkbox" name="priority" value="1" {% if form.get('priority') in [1, '1'] %}checked{% endif %}>
+      ⭐ High priority <span class="hint">(the card gets a gold glow)</span>
+    </label>
+  </div>
+
+  {% if not task %}
+    <div class="field{% if errors.subtasks %} has-error{% endif %}">
+      <label for="subtasks">Subtasks <span class="hint">(optional, one per line)</span></label>
+      <textarea id="subtasks" name="subtasks" rows="3" placeholder="buy eggs&#10;buy milk"
+                {% if errors.subtasks %}aria-invalid="true" aria-describedby="subtasks-error"{% endif %}
+      >{{ form.get('subtasks', '') }}</textarea>
+      {% if errors.subtasks %}<p class="error" id="subtasks-error">{{ errors.subtasks }}</p>{% endif %}
+    </div>
+  {% endif %}
+
   <div class="form-actions">
     <button class="btn btn-primary" type="submit">{{ 'Save changes' if task else 'Add task' }}</button>
     <a class="btn btn-ghost" href="{{ url_for('tasks.index', **keep) }}">Cancel</a>
   </div>
 </form>
+
+{# Subtasks of a saved task have their own small forms. HTML doesn't allow
+   a form inside a form, so they sit in their own card below. #}
+{% if task %}
+  <section class="card subtask-card">
+    <h2>Subtasks</h2>
+    {% if subtasks %}
+      <ul class="step-list big">
+        {% for step in subtasks %}
+          <li class="step{% if step.done %} done{% endif %}">
+            <form method="post" action="{{ url_for('tasks.toggle_subtask', subtask_id=step.id, **keep) }}">
+              {{ ui.csrf() }}{{ ui.back_fields('edit') }}
+              <button class="step-check" type="submit"
+                      aria-label="{{ 'Untick' if step.done else 'Tick' }}: {{ step.title }}">{% if step.done %}✓{% endif %}</button>
+            </form>
+            <span>{{ step.title }}</span>
+            <form method="post" action="{{ url_for('tasks.delete_subtask', subtask_id=step.id, **keep) }}">
+              {{ ui.csrf() }}{{ ui.back_fields('edit') }}
+              <button class="btn btn-small btn-ghost btn-danger" type="submit" aria-label="Remove {{ step.title }}">✕</button>
+            </form>
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p class="hint">No subtasks yet. Break the task into small steps.</p>
+    {% endif %}
+    <form class="inline-form" method="post" action="{{ url_for('tasks.add_subtask', task_id=task.id, **keep) }}">
+      {{ ui.csrf() }}{{ ui.back_fields('edit') }}
+      <label class="visually-hidden" for="new-subtask">New subtask</label>
+      <input id="new-subtask" name="title" type="text" required maxlength="{{ subtask_max }}" placeholder="Add a step…">
+      <button class="btn btn-small btn-primary" type="submit">Add</button>
+    </form>
+  </section>
+{% endif %}
 </div>
 {% endblock %}

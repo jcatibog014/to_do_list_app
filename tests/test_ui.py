@@ -1,4 +1,5 @@
 """Tests for the look: cards or list layout, list colors, tag colors and the banner."""
+import re
 import sqlite3
 
 from conftest import TODAY
@@ -53,8 +54,9 @@ def test_new_lists_without_a_color_take_turns(post, app):
 
 def test_new_list_form_preselects_the_next_color(client, post):
     post("/lists/new", {"name": "One"})
-    html = client.get("/").get_data(as_text=True)
-    assert f'value="{LIST_COLORS[1]}"\n                       checked' in html
+    html = client.get("/lists").get_data(as_text=True)
+    # \s+ allows any spaces or line breaks between the two attributes.
+    assert re.search(rf'value="{LIST_COLORS[1]}"\s+checked', html)
 
 
 def test_new_list_with_an_unknown_color_is_refused(client, post, app):
@@ -118,14 +120,19 @@ def test_tag_chips_are_colored(client, post):
 
 # ---------- The banner ----------
 
-def test_banner_shows_the_date_and_a_summary(client, add):
+def test_banner_greets_and_shows_todays_progress(client, add):
     add("Today one", due_date="2026-10-19")
-    add("Today two", due_date="2026-10-19")
+    add("Today two", due_date="2026-10-19", completed=True)
     add("Late", due_date="2026-10-01")
     add("Done", completed=True)
-    html = client.get("/").get_data(as_text=True)
+    html = " ".join(client.get("/").get_data(as_text=True).split())  # squash the template's line breaks
     assert "Monday, October 19" in html
-    assert "3 to do today · 1 overdue · 1 done" in html  # Today counts late tasks too
+    assert "<span data-hello>Hello</span>, alice!" in html
+    assert "You have 2 tasks today (1 overdue)." in html  # Today counts late tasks too
+    # The bar counts tasks due today: 1 of the 2 is done.
+    assert "1 of 2 done today" in html
+    assert 'aria-valuemax="2" aria-valuenow="1"' in html
+    assert 'style="width: 50%"' in html
 
 
 def test_banner_when_nothing_is_due(client):

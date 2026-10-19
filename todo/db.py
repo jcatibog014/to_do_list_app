@@ -40,9 +40,16 @@ NEW_COLUMNS = {
         "due_time": "TEXT",
         "repeat": "TEXT",
         "remind_before": "INTEGER",
+        "priority": "INTEGER NOT NULL DEFAULT 0",
+        "emoji": "TEXT",
+        "doing": "INTEGER NOT NULL DEFAULT 0",
     },
     "lists": {
         "color": "TEXT NOT NULL DEFAULT 'blue'",
+    },
+    "users": {
+        "theme": "TEXT NOT NULL DEFAULT 'default'",
+        "appearance": "TEXT NOT NULL DEFAULT 'system'",
     },
 }
 
@@ -71,7 +78,7 @@ def init_db_command(reset):
     """Create the database (flask --app todo init-db [--reset])."""
     if reset:
         click.confirm("Delete ALL tasks and accounts?", abort=True)
-        for table in ["task_tags", "tags", "tasks", "lists", "users"]:
+        for table in ["undo", "subtasks", "task_tags", "tags", "tasks", "lists", "users"]:
             get_db().execute(f"DROP TABLE IF EXISTS {table}")
     init_db()
     click.echo("Database ready.")

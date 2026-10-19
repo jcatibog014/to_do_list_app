@@ -29,6 +29,25 @@ REMINDERS = {
     1440: "1 day before",
 }
 
+# The emoji offered on the task form. Quick add accepts any emoji.
+EMOJI_CHOICES = ["🛒", "💪", "📚", "💼", "🏠", "💡", "🎉", "❤️",
+                 "🧹", "💊", "🍳", "✈️", "💰", "📞", "🎮", "🌱"]
+# An emoji is a few characters that aren't letters, digits, spaces or HTML symbols.
+EMOJI_FORMAT = re.compile(r"[^\w\s<>&\"']{1,8}")
+
+SUBTASK_MAX = 100
+SUBTASKS_MAX = 20
+
+# Color themes, and the best streak (days in a row with a task done) that
+# unlocks each one. A small reward for keeping at it.
+THEMES = {
+    "default": {"label": "Grape", "unlock": 0},
+    "ocean": {"label": "Ocean", "unlock": 0},
+    "matcha": {"label": "Matcha", "unlock": 3},
+    "sunset": {"label": "Sunset", "unlock": 7},
+}
+APPEARANCES = {"system": "Match my device", "light": "Light", "dark": "Dark"}
+
 USERNAME_MIN = 3
 USERNAME_MAX = 30
 USERNAME_FORMAT = re.compile(rf"[A-Za-z0-9_]{{{USERNAME_MIN},{USERNAME_MAX}}}")
@@ -43,8 +62,9 @@ def validate_task(form, today, existing_due_date=None):
     existing_due_date -- when editing, the task's saved due date ('YYYY-MM-DD' or None)
 
     The fields are title, description, due_date, due_time, repeat (words
-    like "every week"), remind_before (minutes, from REMINDERS), tags and
-    list_id. Only the title is required.
+    like "every week"), remind_before (minutes, from REMINDERS), tags,
+    list_id, priority (a checkbox), emoji and subtasks (one per line, only
+    on the "new task" form). Only the title is required.
 
     `data` holds the cleaned values, ready to save.
     `errors` maps a field name to a message. The form is valid when it's empty.
@@ -60,6 +80,8 @@ def validate_task(form, today, existing_due_date=None):
     remind_text = form.get("remind_before", "").strip()
     tags_text = form.get("tags", "").strip()
     list_text = form.get("list_id", "").strip()
+    emoji = form.get("emoji", "").strip() or None
+    subtasks_text = form.get("subtasks", "")
 
     if not title:
         errors["title"] = "Title is required."
@@ -133,6 +155,16 @@ def validate_task(form, today, existing_due_date=None):
         else:
             errors["list_id"] = "Choose a list from the menu."
 
+    if emoji is not None and not EMOJI_FORMAT.fullmatch(emoji):
+        errors["emoji"] = "Pick an emoji from the list."
+
+    # One subtask per line. Blank lines are skipped.
+    subtasks = [line.strip() for line in subtasks_text.splitlines() if line.strip()]
+    if any(len(line) > SUBTASK_MAX for line in subtasks):
+        errors["subtasks"] = f"Each subtask must be {SUBTASK_MAX} characters or fewer."
+    elif len(subtasks) > SUBTASKS_MAX:
+        errors["subtasks"] = f"Use {SUBTASKS_MAX} subtasks or fewer."
+
     data = {
         "title": title,
         "description": description,
@@ -142,8 +174,40 @@ def validate_task(form, today, existing_due_date=None):
         "remind_before": remind_before,
         "tags": tags,
         "list_id": list_id,
+        # A ticked checkbox sends its value. An unticked one sends nothing.
+        "priority": 1 if form.get("priority") else 0,
+        "emoji": emoji,
+        "subtasks": subtasks,
     }
     return data, errors
+
+
+def validate_subtask(form):
+    """Return (title, error) for the "add a subtask" box."""
+    title = form.get("title", "").strip()
+    if not title:
+        return title, "Type the subtask first."
+    if len(title) > SUBTASK_MAX:
+        return title, f"Subtasks must be {SUBTASK_MAX} characters or fewer."
+    return title, None
+
+
+def validate_settings(form, best_streak):
+    """Return (data, errors) for the theme and appearance settings.
+
+    best_streak decides which themes are unlocked.
+    """
+    errors = {}
+    theme = form.get("theme", "")
+    appearance = form.get("appearance", "")
+    if theme not in THEMES:
+        errors["theme"] = "Pick one of the themes."
+    elif THEMES[theme]["unlock"] > best_streak:
+        days = THEMES[theme]["unlock"]
+        errors["theme"] = f"{THEMES[theme]['label']} unlocks after a {days}-day streak."
+    if appearance not in APPEARANCES:
+        errors["appearance"] = "Pick light, dark or match my device."
+    return {"theme": theme, "appearance": appearance}, errors
 
 
 def validate_registration(form):

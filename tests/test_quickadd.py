@@ -15,6 +15,7 @@ def parse(text):
 def test_plain_text_is_just_a_title():
     assert parse("Buy milk") == {
         "title": "Buy milk", "due_date": None, "due_time": None, "repeat": None, "tags": [],
+        "priority": False, "emoji": None,
     }
 
 
@@ -76,7 +77,7 @@ def test_repeats_and_their_date_is_left_to_validation():
     result = parse("team meeting every 2nd monday 10:30am")
     assert result == {
         "title": "team meeting", "due_date": None, "due_time": "10:30",
-        "repeat": "nth:2:0", "tags": [],
+        "repeat": "nth:2:0", "tags": [], "priority": False, "emoji": None,
     }
 
 
@@ -97,7 +98,7 @@ def test_everything_at_once():
     result = parse("Pay rent every month oct 31 9am #home #bills")
     assert result == {
         "title": "Pay rent", "due_date": "2026-10-31", "due_time": "09:00",
-        "repeat": "month:1", "tags": ["home", "bills"],
+        "repeat": "month:1", "tags": ["home", "bills"], "priority": False, "emoji": None,
     }
 
 
@@ -122,3 +123,29 @@ def test_impossible_dates_and_times_are_passed_on_for_validation():
 
 def test_only_a_date_leaves_an_empty_title():
     assert parse("tomorrow 5pm")["title"] == ""
+
+
+@pytest.mark.parametrize("text", ["call mom !", "! call mom", "call mom !high", "call mom !!"])
+def test_exclamation_mark_means_high_priority(text):
+    result = parse(text)
+    assert result["priority"] is True
+    assert result["title"] == "call mom"
+
+
+def test_exclamation_inside_a_word_is_kept():
+    result = parse("yay! done")
+    assert result["priority"] is False
+    assert result["title"] == "yay! done"
+
+
+@pytest.mark.parametrize("text, emoji", [
+    ("🛒 buy eggs", "🛒"),
+    ("buy eggs 🛒", "🛒"),
+    ("❤️ call grandma", "❤️"),
+    ("✈️ pack bags", "✈️"),
+    ("👩‍💻 code review", "👩‍💻"),   # several emoji glued together with \u200d
+])
+def test_emoji_is_taken_out_of_the_title(text, emoji):
+    result = parse(text)
+    assert result["emoji"] == emoji
+    assert "🛒" not in result["title"] and result["title"].strip() == result["title"]

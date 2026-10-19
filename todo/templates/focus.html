@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% import "_macros.html" as ui with context %}
+
+{% block title %}Focus · {% endblock %}
+
+{% block content %}
+{#
+  Focus mode: one task at a time. focus.js turns the cards into a
+  swipeable stack. Without JavaScript the buttons still work: they act on
+  the first card, and the page reloads with the next one.
+#}
+<div class="focus narrow">
+  <div class="page-head">
+    <div>
+      <p class="eyebrow">Focus mode</p>
+      <h1>Just the next thing</h1>
+    </div>
+    <a class="btn btn-ghost btn-small" href="{{ url_for('tasks.index') }}">✕ Exit</a>
+  </div>
+
+  {% if tasks %}
+    <p class="focus-count" data-count>{{ tasks|length }} to go</p>
+    <div class="stack" data-stack>
+      {% for task in tasks %}
+        <article class="focus-card color-{{ task.color }}{% if task.priority %} is-priority{% endif %}{% if task.badge and task.badge.kind %} is-{{ task.badge.kind }}{% endif %}"
+                 data-done-url="{{ url_for('tasks.toggle', task_id=task.id) }}"
+                 data-tomorrow-url="{{ url_for('tasks.tomorrow', task_id=task.id) }}"
+                 {% if not loop.first %}aria-hidden="true"{% endif %}>
+          {# These labels fade in while you drag, to show what letting go will do. #}
+          <span class="swipe-label swipe-done" aria-hidden="true">Done ✓</span>
+          <span class="swipe-label swipe-later" aria-hidden="true">Later</span>
+          <span class="swipe-label swipe-tomorrow" aria-hidden="true">Tomorrow ☀️</span>
+
+          <p class="focus-emoji" aria-hidden="true">{{ task.emoji or '🎯' }}</p>
+          <h2 class="focus-title">{{ task.title }}</h2>
+          {% if task.description %}<p class="task-desc">{{ task.description }}</p>{% endif %}
+          {% if task.subtasks %}
+            <p class="steps-progress">{{ ui.ring(task.progress) }} {{ task.subtasks_done }} of {{ task.subtasks|length }} steps done</p>
+          {% endif %}
+          {{ ui.meta(task) }}
+        </article>
+      {% endfor %}
+    </div>
+
+    {% set top = tasks[0] %}
+    <div class="focus-actions">
+      <a class="focus-button later" href="{{ url_for('tasks.focus', skip=later) }}" data-action="later">
+        <span aria-hidden="true">⏰</span> Later
+      </a>
+      <form method="post" action="{{ url_for('tasks.tomorrow', task_id=top.id) }}" data-action="tomorrow">
+        {{ ui.csrf() }}{{ ui.back_fields('focus') }}
+        <button class="focus-button tomorrow" type="submit"><span aria-hidden="true">☀️</span> Tomorrow</button>
+      </form>
+      <form method="post" action="{{ url_for('tasks.toggle', task_id=top.id) }}" data-action="done">
+        {{ ui.csrf() }}{{ ui.back_fields('focus') }}
+        <button class="focus-button done" type="submit"><span aria-hidden="true">✓</span> Done</button>
+      </form>
+    </div>
+    <p class="hint focus-hint">Swipe right when it's done, left for later, or up to move it to tomorrow. The arrow keys work too.</p>
+  {% endif %}
+
+  <div class="empty all-clear" data-empty {% if tasks %}hidden{% endif %}>
+    {{ ui.all_clear() }}
+    <h2>All clear!</h2>
+    <p>Go enjoy your day.</p>
+    <a class="btn btn-primary" href="{{ url_for('tasks.index') }}">Back to my tasks</a>
+  </div>
+</div>
+<script src="{{ url_for('static', filename='focus.js') }}" defer></script>
+{% endblock %}

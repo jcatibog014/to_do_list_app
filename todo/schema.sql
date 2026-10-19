@@ -6,7 +6,9 @@ CREATE TABLE IF NOT EXISTS users (
   id            INTEGER PRIMARY KEY AUTOINCREMENT,
   username      TEXT    NOT NULL UNIQUE COLLATE NOCASE,  -- "Ana" and "ana" count as the same name
   password_hash TEXT    NOT NULL,
-  created_at    TEXT    NOT NULL DEFAULT (datetime('now', 'localtime'))
+  created_at    TEXT    NOT NULL DEFAULT (datetime('now', 'localtime')),
+  theme         TEXT    NOT NULL DEFAULT 'default',  -- one of THEMES in validation.py
+  appearance    TEXT    NOT NULL DEFAULT 'system'    -- 'light', 'dark', or 'system' to follow the device
 );
 
 -- Lists (projects) like "Work" or "Home". Tasks in no list are in the Inbox.
@@ -31,7 +33,25 @@ CREATE TABLE IF NOT EXISTS tasks (
   list_id       INTEGER REFERENCES lists (id),     -- NULL = Inbox
   due_time      TEXT,                              -- 'HH:MM' on a 24-hour clock, or NULL
   repeat        TEXT,                              -- a rule like 'week:1' (see recurrence.py), or NULL
-  remind_before INTEGER                            -- minutes before the due time, or NULL for no reminder
+  remind_before INTEGER,                           -- minutes before the due time, or NULL for no reminder
+  priority      INTEGER NOT NULL DEFAULT 0,        -- 1 = high priority
+  emoji         TEXT,                              -- like '🛒', or NULL
+  doing         INTEGER NOT NULL DEFAULT 0         -- 1 = in the board's "Doing" column
+);
+
+-- A task's checklist: "buy eggs", "buy milk" inside "Groceries".
+CREATE TABLE IF NOT EXISTS subtasks (
+  id      INTEGER PRIMARY KEY AUTOINCREMENT,
+  task_id INTEGER NOT NULL REFERENCES tasks (id),
+  title   TEXT    NOT NULL,
+  done    INTEGER NOT NULL DEFAULT 0
+);
+
+-- The last thing each user can undo (completing or deleting a task).
+-- It's saved as JSON text: a dict turned into a string by json.dumps().
+CREATE TABLE IF NOT EXISTS undo (
+  user_id INTEGER PRIMARY KEY REFERENCES users (id),  -- one row per user: a new action replaces the old one
+  data    TEXT    NOT NULL
 );
 
 -- Tags are a "many-to-many" link: a task can have many tags, and a tag can

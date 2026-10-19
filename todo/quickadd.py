@@ -42,17 +42,34 @@ TIME = whole_words(r"""(?:at\s+|@\s*)?(?:
   | (?P<noon>noon)
 )""")
 TAG = re.compile(r"(?<![\w&])#(\w[\w-]*)")
+# "!" or "!high" on its own, anywhere in the line, means high priority.
+PRIORITY = re.compile(r"(?<!\S)!(?:high|!)?(?!\S)", re.IGNORECASE)
+# A word made only of emoji characters, like "🛒" or "❤️". The ranges are
+# the Unicode blocks where emoji live; ‍ and ️ glue emoji together.
+EMOJI = re.compile(r"(?<!\S)[☀-➿⬀-⯿\U0001f000-\U0001faff‍️]+(?!\S)")
 
 
 def parse_quick_add(text, today):
     """Split a quick-add line into its parts.
 
     Returns a dict with "title", "due_date" ('YYYY-MM-DD'), "due_time"
-    ('HH:MM'), "repeat" (a rule code from recurrence.py) and "tags" (a
-    list). Parts that weren't typed are None, or [] for tags. Checking the
-    values, like whether "feb 30" exists, is left to validate_task().
+    ('HH:MM'), "repeat" (a rule code from recurrence.py), "tags" (a list),
+    "priority" (True or False) and "emoji". Parts that weren't typed are
+    None, [] for tags, or False for priority. Checking the values, like
+    whether "feb 30" exists, is left to validate_task().
     """
-    result = {"due_date": None, "due_time": None, "repeat": None, "tags": []}
+    result = {"due_date": None, "due_time": None, "repeat": None, "tags": [],
+              "priority": False, "emoji": None}
+
+    match = PRIORITY.search(text)
+    if match:
+        result["priority"] = True
+        text = cut(text, match)
+
+    match = EMOJI.search(text)
+    if match:
+        result["emoji"] = match.group()
+        text = cut(text, match)
 
     # Repeats go first: "every friday" holds a day name that DATE would
     # otherwise take as a one-off date.

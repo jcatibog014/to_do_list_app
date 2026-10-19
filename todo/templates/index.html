@@ -1,211 +1,151 @@
 {% extends "base.html" %}
+{% import "_macros.html" as ui with context %}
 
 {% block title %}{% if heading != 'My tasks' %}{{ heading }} · {% endif %}{% endblock %}
 
 {% block content %}
-{# Two columns on wide screens: the lists on the left, the tasks on the right.
-   On narrow screens the lists sit on top as a row of chips. #}
-<div class="board">
-
-  <aside class="sidebar">
-    <nav class="lists" aria-label="Lists">
-      <p class="sidebar-title">Lists</p>
-      <a class="list-link color-accent{% if not shown_list %} active{% endif %}" href="{{ list_url(list=None) }}"
-         {% if not shown_list %}aria-current="page"{% endif %}>
-        <span class="dot" aria-hidden="true"></span> All lists
-      </a>
-      <a class="list-link color-slate{% if shown_list == 'inbox' %} active{% endif %}" href="{{ list_url(list='inbox') }}"
-         {% if shown_list == 'inbox' %}aria-current="page"{% endif %}>
-        <span class="dot" aria-hidden="true"></span> Inbox
-      </a>
-      {% for item in lists %}
-        {% set is_current = current_list and current_list.id == item.id %}
-        <a class="list-link color-{{ item.color }}{% if is_current %} active{% endif %}" href="{{ list_url(list=item.id) }}"
-           {% if is_current %}aria-current="page"{% endif %}>
-          <span class="dot" aria-hidden="true"></span> {{ item.name }}
-        </a>
-      {% endfor %}
-
-      {# <details> opens and closes without any JavaScript. #}
-      <details class="new-list">
-        <summary class="list-link">＋ New list</summary>
-        <form method="post" action="{{ url_for('tasks.create_list', **keep) }}">
-          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-          <label class="visually-hidden" for="list-name">List name</label>
-          <input id="list-name" name="name" type="text" required maxlength="{{ list_name_max }}"
-                 placeholder="e.g. Work">
-          <fieldset class="swatches">
-            <legend class="visually-hidden">Color</legend>
-            {% for color in list_colors %}
-              {# The real radio button is hidden. The span after it is the colored circle you see. #}
-              <label class="swatch color-{{ color }}">
-                <input class="visually-hidden" type="radio" name="color" value="{{ color }}"
-                       {% if color == next_color %}checked{% endif %}>
-                <span aria-hidden="true"></span>
-                <span class="visually-hidden">{{ color|capitalize }}</span>
-              </label>
-            {% endfor %}
-          </fieldset>
-          <button class="btn btn-small btn-primary" type="submit">Add list</button>
-        </form>
-      </details>
-    </nav>
-  </aside>
-
-  <section class="main-col">
-    {# The banner takes the color of the list on screen. #}
-    <header class="hero{% if current_list %} color-{{ current_list.color }}{% elif shown_list == 'inbox' %} color-slate{% endif %}">
-      <div>
-        <p class="eyebrow">{{ today_text }}</p>
-        <h1>{{ heading }}</h1>
-        <p class="hero-sub">
-          {% if counts['today'] %}{{ counts['today'] }} to do today{% else %}Nothing due today{% endif %}
-          {%- if counts['overdue'] %} · {{ counts['overdue'] }} overdue{% endif %}
-          {%- if counts['completed'] %} · {{ counts['completed'] }} done{% endif %}
-        </p>
-      </div>
-      <a class="btn btn-glass" href="{{ url_for('tasks.create', **keep) }}">+ Task with details</a>
-    </header>
-
-    {# Quick add: one line, no form to fill in. quickadd.py reads the date,
-       time, repeat and #tags out of the text. #}
-    <form class="quick-add{% if quick_error %} has-error{% endif %}" method="post"
-          action="{{ url_for('tasks.quick_add', **keep) }}">
-      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-      <label class="visually-hidden" for="quick">Quick add a task</label>
-      <div class="quick-row">
-        <span class="quick-icon" aria-hidden="true">＋</span>
-        <input id="quick" name="text" type="text" value="{{ quick_text }}" required autocomplete="off"
-               placeholder="Add a task… e.g. pay rent friday 5pm #home"
-               {% if quick_error %}autofocus aria-invalid="true" aria-describedby="quick-error"{% endif %}>
-        <button class="btn btn-primary" type="submit">Add</button>
-      </div>
-      {% if quick_error %}<p class="error" id="quick-error">{{ quick_error }}</p>{% endif %}
-      <p class="hint">Try “tomorrow”, “friday 5pm”, “oct 25”, “in 3 days”, “every 2nd monday” or #tags.</p>
-    </form>
-
-    <div class="toolbar">
-      <form class="search" method="get" action="{{ url_for('tasks.index') }}" role="search">
-        {# Hidden fields keep the tab, list and tag when you search. #}
-        {% for key, value in keep.items() if key != 'q' %}
-          <input type="hidden" name="{{ key }}" value="{{ value }}">
-        {% endfor %}
-        <label class="visually-hidden" for="q">Search tasks</label>
-        <input id="q" type="search" name="q" value="{{ q }}" placeholder="Search tasks…">
-        <button class="btn" type="submit">Search</button>
-        {% if q %}
-          <a class="btn btn-ghost" href="{{ list_url(q=None) }}">Clear</a>
-        {% endif %}
-      </form>
-
-      {# Cards or list. It's a form because it changes a saved setting. #}
-      <form class="segmented" method="post" action="{{ url_for('tasks.set_view', **keep) }}" aria-label="Layout">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        {% for key, label in views.items() %}
-          <button type="submit" name="view" value="{{ key }}"{% if key == view %} class="active" aria-pressed="true"{% else %} aria-pressed="false"{% endif %}>
-            <span aria-hidden="true">{{ '▦' if key == 'cards' else '☰' }}</span> {{ label }}
-          </button>
-        {% endfor %}
-      </form>
-    </div>
-
-    <nav class="tabs" aria-label="Filter tasks">
-      {% for key, label in filters.items() %}
-        <a class="tab tab-{{ key }}{% if key == status %} active{% endif %}"
-           href="{{ list_url(status=key if key != 'all' else None) }}"
-           {% if key == status %}aria-current="page"{% endif %}>
-          {{ label }} <span class="count">{{ counts[key] }}</span>
-        </a>
-      {% endfor %}
-    </nav>
-
-    {% if tag %}
-      <p class="filter-note">
-        Showing tasks tagged <strong>#{{ tag }}</strong> · <a href="{{ list_url(tag=None) }}">Show all tags</a>
-      </p>
-    {% endif %}
-
-    {% if tasks %}
-      <ul class="task-list view-{{ view }}">
-        {% for task in tasks %}
-          <li class="task color-{{ task.color }}{% if task.completed %} done{% endif %}{% if task.badge and task.badge.kind %} is-{{ task.badge.kind }}{% endif %}">
-            <form class="task-check" method="post" action="{{ url_for('tasks.toggle', task_id=task.id, **keep) }}">
-              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-              <button class="check" type="submit"
-                      aria-label="{{ 'Mark as not done' if task.completed else 'Mark as done' }}: {{ task.title }}">
-                {% if task.completed %}✓{% endif %}
-              </button>
-            </form>
-
-            <div class="task-body">
-              <p class="task-title">{{ task.title }}</p>
-              {% if task.description %}<p class="task-desc">{{ task.description }}</p>{% endif %}
-              <div class="task-meta">
-                {% if task.badge %}<span class="badge {{ task.badge.kind }}">{{ task.badge.text }}</span>{% endif %}
-                {% if task.remind_before is not none and not task.completed %}
-                  <span class="badge" title="Reminder on">🔔<span class="visually-hidden">Reminder on</span></span>
-                {% endif %}
-                {% if task.repeat_text %}<span class="badge">↻ {{ task.repeat_text }}</span>{% endif %}
-                {# The list name only helps when tasks from several lists are shown. #}
-                {% if task.list_name and not shown_list %}
-                  <a class="badge badge-list" href="{{ list_url(list=task.list_id) }}"><span class="dot" aria-hidden="true"></span>{{ task.list_name }}</a>
-                {% endif %}
-                {% for name in task.tags %}
-                  <a class="badge tag color-{{ tag_color(name) }}" href="{{ list_url(tag=name) }}">#{{ name }}</a>
-                {% endfor %}
-              </div>
-            </div>
-
-            <div class="task-actions">
-              <a class="btn btn-small btn-ghost" href="{{ url_for('tasks.edit', task_id=task.id, **keep) }}">Edit</a>
-              <form method="post" action="{{ url_for('tasks.delete', task_id=task.id, **keep) }}"
-                    onsubmit="return confirm('Delete this task? This can’t be undone.');">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <button class="btn btn-small btn-ghost btn-danger" type="submit">Delete</button>
-              </form>
-            </div>
-          </li>
-        {% endfor %}
-      </ul>
-    {% else %}
-      <div class="empty">
-        {% if q %}
-          <p class="empty-icon" aria-hidden="true">🔍</p>
-          <p>No tasks match “{{ q }}”.</p>
-        {% elif tag %}
-          <p class="empty-icon" aria-hidden="true">🏷️</p>
-          <p>No tasks tagged #{{ tag }} here.</p>
-        {% elif counts['all'] == 0 %}
-          <p class="empty-icon" aria-hidden="true">📝</p>
-          <p>No tasks yet. Type one in the box above, like “call mom tomorrow 5pm”.</p>
-        {% elif status == 'today' %}
-          <p class="empty-icon" aria-hidden="true">☀️</p>
-          <p>Nothing due today. 🎉</p>
-        {% else %}
-          <p class="empty-icon" aria-hidden="true">✨</p>
-          <p>Nothing here. 🎉</p>
-        {% endif %}
+{# Greeting and today's progress. The banner takes the color of the list on screen. #}
+<header class="hero{% if current_list %} color-{{ current_list.color }}{% elif shown_list == 'inbox' %} color-slate{% endif %}">
+  <div class="hero-text">
+    <p class="eyebrow">{{ today_text }}</p>
+    <h1>{{ heading }}</h1>
+    {# app.js swaps "Hello" for "Good morning/afternoon/evening" using your device's clock. #}
+    <p class="greeting">
+      <span data-hello>Hello</span>, {{ g.user.username }}!
+      {% set due = counts['today'] %}
+      {% if due %}
+        You have {{ due }} task{{ 's' if due != 1 }} today{% if counts['overdue'] %} ({{ counts['overdue'] }} overdue){% endif %}.
+      {% else %}
+        Nothing due today. 🎉
+      {% endif %}
+    </p>
+  </div>
+  <div class="hero-side">
+    {% if day_total %}
+      <p class="day-label">{{ day_done }} of {{ day_total }} done today</p>
+      <div class="day-bar" role="progressbar" aria-label="Today's progress"
+           aria-valuemin="0" aria-valuemax="{{ day_total }}" aria-valuenow="{{ day_done }}">
+        <span style="width: {{ (100 * day_done / day_total)|round|int }}%"></span>
       </div>
     {% endif %}
+    <a class="btn btn-glass" href="{{ url_for('tasks.focus') }}">🎯 Focus mode</a>
+  </div>
+</header>
 
-    {% if current_list %}
-      <div class="list-tools">
-        <form class="swatches" method="post" action="{{ url_for('tasks.change_list_color', list_id=current_list.id, **keep) }}">
-          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-          <span class="hint">List color</span>
-          {% for color in list_colors %}
-            <button class="swatch-button color-{{ color }}{% if color == current_list.color %} active{% endif %}"
-                    type="submit" name="color" value="{{ color }}"
-                    aria-label="Make this list {{ color }}"{% if color == current_list.color %} aria-pressed="true"{% endif %}></button>
-          {% endfor %}
-        </form>
-        <form method="post" action="{{ url_for('tasks.delete_list', list_id=current_list.id) }}"
-              onsubmit="return confirm('Delete this list? Its tasks will move to the Inbox.');">
-          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-          <button class="btn btn-small btn-ghost btn-danger" type="submit">Delete this list</button>
-        </form>
-      </div>
+{# Lists as a row of chips. Switching list keeps the tab, search and tag you had. #}
+<nav class="chips" aria-label="Lists">
+  <a class="chip color-accent{% if not shown_list %} active{% endif %}" href="{{ list_url(list=None) }}"
+     {% if not shown_list %}aria-current="page"{% endif %}><span class="dot" aria-hidden="true"></span>All</a>
+  <a class="chip color-slate{% if shown_list == 'inbox' %} active{% endif %}" href="{{ list_url(list='inbox') }}"
+     {% if shown_list == 'inbox' %}aria-current="page"{% endif %}><span class="dot" aria-hidden="true"></span>Inbox</a>
+  {% for item in lists %}
+    {% set is_current = current_list and current_list.id == item.id %}
+    <a class="chip color-{{ item.color }}{% if is_current %} active{% endif %}" href="{{ list_url(list=item.id) }}"
+       {% if is_current %}aria-current="page"{% endif %}><span class="dot" aria-hidden="true"></span>{{ item.name }}</a>
+  {% endfor %}
+  <a class="chip chip-add" href="{{ url_for('lists.index') }}">＋ Lists</a>
+</nav>
+
+{# Quick add: one line, no form to fill in. quickadd.py reads the date,
+   time, repeat, #tags, ! and emoji out of the text. #}
+<form class="quick-add{% if quick_error %} has-error{% endif %}" method="post"
+      action="{{ url_for('tasks.quick_add', **keep) }}">
+  {{ ui.csrf() }}
+  <label class="visually-hidden" for="quick">Quick add a task</label>
+  <div class="quick-row">
+    <span class="quick-icon" aria-hidden="true">＋</span>
+    <input id="quick" name="text" type="text" value="{{ quick_text }}" required autocomplete="off"
+           placeholder="Add a task… e.g. 🛒 buy eggs friday 5pm #home !"
+           {% if quick_error %}autofocus aria-invalid="true" aria-describedby="quick-error"{% endif %}>
+    <button class="btn btn-primary" type="submit">Add</button>
+  </div>
+  {% if quick_error %}<p class="error" id="quick-error">{{ quick_error }}</p>{% endif %}
+  <p class="hint">Try “tomorrow”, “friday 5pm”, “every 2nd monday”, #tags, an emoji, or ! for high priority.</p>
+</form>
+
+<div class="toolbar">
+  <form class="search" method="get" action="{{ url_for('tasks.index') }}" role="search">
+    {# Hidden fields keep the tab, list and tag when you search. #}
+    {% for key, value in keep.items() if key != 'q' %}
+      <input type="hidden" name="{{ key }}" value="{{ value }}">
+    {% endfor %}
+    <label class="visually-hidden" for="q">Search tasks</label>
+    <input id="q" type="search" name="q" value="{{ q }}" placeholder="Search tasks…">
+    <button class="btn" type="submit">Search</button>
+    {% if q %}
+      <a class="btn btn-ghost" href="{{ list_url(q=None) }}">Clear</a>
     {% endif %}
-  </section>
+  </form>
+
+  {# Grid, list or board. It's a form because it changes a saved setting. #}
+  <form class="segmented" method="post" action="{{ url_for('tasks.set_view', **keep) }}" aria-label="Layout">
+    {{ ui.csrf() }}
+    {% for key, label in views.items() %}
+      <button type="submit" name="view" value="{{ key }}"{% if key == view %} class="active" aria-pressed="true"{% else %} aria-pressed="false"{% endif %}>
+        <span aria-hidden="true">{{ {'cards': '▦', 'list': '☰', 'board': '▥'}[key] }}</span> {{ label }}
+      </button>
+    {% endfor %}
+  </form>
 </div>
+
+<nav class="tabs" aria-label="Filter tasks">
+  {% for key, label in filters.items() %}
+    <a class="tab tab-{{ key }}{% if key == status %} active{% endif %}"
+       href="{{ list_url(status=key if key != 'all' else None) }}"
+       {% if key == status %}aria-current="page"{% endif %}>
+      {{ label }} <span class="count">{{ counts[key] }}</span>
+    </a>
+  {% endfor %}
+</nav>
+
+{% if tag %}
+  <p class="filter-note">
+    Showing tasks tagged <strong>#{{ tag }}</strong> · <a href="{{ list_url(tag=None) }}">Show all tags</a>
+  </p>
+{% endif %}
+
+{% if tasks and view == 'board' %}
+  {# The board: drag a card to another column (app.js), or use its buttons. #}
+  <div class="board-view">
+    {% for key, label in board_columns.items() %}
+      <section class="board-col board-{{ key }}" data-status="{{ key }}" aria-label="{{ label }}">
+        <h2>{{ label }} <span class="count">{{ board[key]|length }}</span></h2>
+        <ul class="board-cards">
+          {% for task in board[key] %}
+            {{ ui.board_card(task, key, lists) }}
+          {% else %}
+            <li class="board-empty">Drop a card here</li>
+          {% endfor %}
+        </ul>
+      </section>
+    {% endfor %}
+  </div>
+{% elif tasks %}
+  <ul class="task-list view-{{ view }}">
+    {% for task in tasks %}
+      {{ ui.task_card(task, lists) }}
+    {% endfor %}
+  </ul>
+{% elif q %}
+  <div class="empty"><p class="empty-icon" aria-hidden="true">🔍</p><p>No tasks match “{{ q }}”.</p></div>
+{% elif tag %}
+  <div class="empty"><p class="empty-icon" aria-hidden="true">🏷️</p><p>No tasks tagged #{{ tag }} here.</p></div>
+{% elif counts['all'] == 0 %}
+  <div class="empty"><p class="empty-icon" aria-hidden="true">📝</p><p>No tasks yet. Type one in the box above, like “call mom tomorrow 5pm”.</p></div>
+{% elif status in ['all', 'today', 'active'] %}
+  {# Nothing left to do: celebrate. #}
+  <div class="empty all-clear">
+    {{ ui.all_clear() }}
+    <h2>All clear!</h2>
+    <p>Go enjoy your day.</p>
+  </div>
+{% else %}
+  <div class="empty"><p class="empty-icon" aria-hidden="true">✨</p><p>Nothing here.</p></div>
+{% endif %}
+
+{% if current_list %}
+  <p class="list-tools">
+    <a href="{{ url_for('lists.index') }}#list-{{ current_list.id }}">Rename, recolor or delete “{{ current_list.name }}”</a>
+  </p>
+{% endif %}
 {% endblock %}

@@ -1,0 +1,180 @@
+{#
+  Pieces of HTML used on several pages. A macro is like a Python function
+  that returns HTML. Templates load them with:
+      {% import "_macros.html" as ui with context %}
+  "with context" lets the macros use keep, list_url() and csrf_token().
+#}
+
+{# Hidden fields that tell the server which page to go back to (see go_back() in tasks.py). #}
+{% macro back_fields(next) -%}
+  {% if next %}
+    <input type="hidden" name="next" value="{{ next }}">
+    {% if next == 'calendar' %}
+      {% for key in ['month', 'day'] if request.args.get(key) %}
+        <input type="hidden" name="{{ key }}" value="{{ request.args[key] }}">
+      {% endfor %}
+    {% endif %}
+  {% endif %}
+{%- endmacro %}
+
+{% macro csrf() -%}
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+{%- endmacro %}
+
+{# A ring that fills up as subtasks get done. The circle's length is 100
+   (r = 15.915 makes 2 × π × r = 100), so "40 100" draws 40% of it. #}
+{% macro ring(percent) -%}
+  <svg class="ring" viewBox="0 0 36 36" aria-hidden="true">
+    <circle class="ring-track" cx="18" cy="18" r="15.915"></circle>
+    <circle class="ring-fill" cx="18" cy="18" r="15.915" stroke-dasharray="{{ percent }} 100"></circle>
+  </svg>
+{%- endmacro %}
+
+{# The labels under a task: due date, priority, reminder, repeat, list and tags. #}
+{% macro meta(task, show_list=true) -%}
+  <div class="task-meta">
+    {% if task.badge %}<span class="badge {{ task.badge.kind }}">{{ task.badge.text }}</span>{% endif %}
+    {% if task.priority and not task.completed %}<span class="badge priority">⭐ High</span>{% endif %}
+    {% if task.remind_before is not none and not task.completed %}
+      <span class="badge" title="Reminder on">🔔<span class="visually-hidden">Reminder on</span></span>
+    {% endif %}
+    {% if task.repeat_text %}<span class="badge">↻ {{ task.repeat_text }}</span>{% endif %}
+    {% if show_list and task.list_name %}
+      <a class="badge badge-list" href="{{ list_url(list=task.list_id) }}"><span class="dot" aria-hidden="true"></span>{{ task.list_name }}</a>
+    {% endif %}
+    {% for name in task.tags %}
+      <a class="badge tag color-{{ tag_color(name) }}" href="{{ list_url(tag=name) }}">#{{ name }}</a>
+    {% endfor %}
+  </div>
+{%- endmacro %}
+
+{# The quick-actions menu. It's a popover: the browser opens it on top of
+   the page when a button with popovertarget="menu-<id>" is clicked, with
+   no JavaScript needed. app.js also opens it on a long press. #}
+{% macro task_menu(task, lists, next=None) -%}
+  <div class="sheet menu" id="menu-{{ task.id }}" popover>
+    <p class="sheet-title">{% if task.emoji %}{{ task.emoji }} {% endif %}{{ task.title }}</p>
+    <a class="menu-item" href="{{ url_for('tasks.edit', task_id=task.id, **keep) }}">✏️ Edit</a>
+    {% if not task.completed %}
+      <form method="post" action="{{ url_for('tasks.tomorrow', task_id=task.id, **keep) }}">
+        {{ csrf() }}{{ back_fields(next) }}
+        <button class="menu-item" type="submit">☀️ Move to tomorrow</button>
+      </form>
+    {% endif %}
+    <form method="post" action="{{ url_for('tasks.toggle_priority', task_id=task.id, **keep) }}">
+      {{ csrf() }}{{ back_fields(next) }}
+      <button class="menu-item" type="submit">⭐ {{ 'Make normal priority' if task.priority else 'Make high priority' }}</button>
+    </form>
+    <form class="menu-move" method="post" action="{{ url_for('tasks.move', task_id=task.id, **keep) }}">
+      {{ csrf() }}{{ back_fields(next) }}
+      <label for="move-{{ task.id }}">🎨 Move to a list <span class="hint">(its color comes along)</span></label>
+      <div class="menu-row">
+        <select id="move-{{ task.id }}" name="list_id">
+          <option value="">Inbox</option>
+          {% for item in lists %}
+            <option value="{{ item.id }}" {% if item.id == task.list_id %}selected{% endif %}>{{ item.name }}</option>
+          {% endfor %}
+        </select>
+        <button class="btn btn-small" type="submit">Move</button>
+      </div>
+    </form>
+    {# No "Are you sure?" here: the toast that follows has an Undo button. #}
+    <form method="post" action="{{ url_for('tasks.delete', task_id=task.id, **keep) }}">
+      {{ csrf() }}{{ back_fields(next) }}
+      <button class="menu-item danger" type="submit">🗑️ Delete</button>
+    </form>
+    <button class="menu-item muted" type="button" popovertarget="menu-{{ task.id }}" popovertargetaction="hide">Close</button>
+  </div>
+{%- endmacro %}
+
+{# One task as a card (grid) or a row (list). #}
+{% macro task_card(task, lists, next=None) -%}
+  <li class="task color-{{ task.color }}{% if task.completed %} done{% endif %}{% if task.badge and task.badge.kind %} is-{{ task.badge.kind }}{% endif %}{% if task.priority and not task.completed %} is-priority{% endif %}">
+    <div class="card-head">
+      <form class="task-check" method="post" action="{{ url_for('tasks.toggle', task_id=task.id, **keep) }}">
+        {{ csrf() }}{{ back_fields(next) }}
+        <button class="check" type="submit"
+                aria-label="{{ 'Mark as not done' if task.completed else 'Mark as done' }}: {{ task.title }}">
+          {% if task.completed %}✓{% endif %}
+        </button>
+      </form>
+      <a class="task-title" href="{{ url_for('tasks.edit', task_id=task.id, **keep) }}">
+        {%- if task.emoji %}<span class="task-emoji" aria-hidden="true">{{ task.emoji }}</span> {% endif %}{{ task.title -}}
+      </a>
+      <button class="menu-button" type="button" popovertarget="menu-{{ task.id }}"
+              aria-label="More actions for {{ task.title }}">⋯</button>
+    </div>
+
+    {% if task.description %}<p class="task-desc">{{ task.description }}</p>{% endif %}
+
+    {% if task.subtasks %}
+      <div class="steps">
+        <p class="steps-progress">{{ ring(task.progress) }} {{ task.subtasks_done }} of {{ task.subtasks|length }}</p>
+        <ul class="step-list">
+          {% for step in task.subtasks[:6] %}
+            <li class="step{% if step.done %} done{% endif %}">
+              <form method="post" action="{{ url_for('tasks.toggle_subtask', subtask_id=step.id, **keep) }}">
+                {{ csrf() }}{{ back_fields(next) }}
+                <button class="step-check" type="submit"
+                        aria-label="{{ 'Untick' if step.done else 'Tick' }}: {{ step.title }}">{% if step.done %}✓{% endif %}</button>
+              </form>
+              <span>{{ step.title }}</span>
+            </li>
+          {% endfor %}
+          {% if task.subtasks|length > 6 %}<li class="step-more">+{{ task.subtasks|length - 6 }} more</li>{% endif %}
+        </ul>
+      </div>
+    {% endif %}
+
+    {# The list's name only helps when tasks from several lists are shown. #}
+    {{ meta(task, show_list=not shown_list) }}
+    {{ task_menu(task, lists, next) }}
+  </li>
+{%- endmacro %}
+
+{# A smaller card for the board. Drag it to another column, or use the buttons. #}
+{% macro board_card(task, column, lists) -%}
+  <li class="board-card color-{{ task.color }}{% if task.priority and not task.completed %} is-priority{% endif %}{% if task.badge and task.badge.kind %} is-{{ task.badge.kind }}{% endif %}"
+      draggable="true" data-status-url="{{ url_for('tasks.set_status', task_id=task.id, **keep) }}">
+    <div class="card-head">
+      <a class="task-title" href="{{ url_for('tasks.edit', task_id=task.id, **keep) }}">
+        {%- if task.emoji %}<span class="task-emoji" aria-hidden="true">{{ task.emoji }}</span> {% endif %}{{ task.title -}}
+      </a>
+      <button class="menu-button" type="button" popovertarget="menu-{{ task.id }}"
+              aria-label="More actions for {{ task.title }}">⋯</button>
+    </div>
+    {% if task.subtasks %}
+      <p class="steps-progress">{{ ring(task.progress) }} {{ task.subtasks_done }} of {{ task.subtasks|length }}</p>
+    {% endif %}
+    {{ meta(task) }}
+    <div class="board-moves">
+      {% for key, label in board_columns.items() if key != column %}
+        <form method="post" action="{{ url_for('tasks.set_status', task_id=task.id, **keep) }}">
+          {{ csrf() }}
+          <input type="hidden" name="status" value="{{ key }}">
+          <button class="btn btn-small btn-ghost" type="submit">→ {{ label }}</button>
+        </form>
+      {% endfor %}
+    </div>
+    {{ task_menu(task, lists) }}
+  </li>
+{%- endmacro %}
+
+{# The "all clear" picture: a smiling sun. Drawn with SVG shapes, so it's
+   sharp at any size and takes its colors from the theme. #}
+{% macro all_clear() -%}
+  <svg class="illustration" viewBox="0 0 160 120" aria-hidden="true">
+    <ellipse class="ill-shadow" cx="80" cy="108" rx="44" ry="6"></ellipse>
+    <g class="ill-rays">
+      {% for angle in range(0, 360, 45) %}
+        <rect x="77" y="6" width="6" height="16" rx="3" transform="rotate({{ angle }} 80 56)"></rect>
+      {% endfor %}
+    </g>
+    <circle class="ill-sun" cx="80" cy="56" r="28"></circle>
+    <circle class="ill-eye" cx="70" cy="52" r="3"></circle>
+    <circle class="ill-eye" cx="90" cy="52" r="3"></circle>
+    <path class="ill-smile" d="M68 63 q12 10 24 0"></path>
+    <circle class="ill-cheek" cx="64" cy="62" r="4"></circle>
+    <circle class="ill-cheek" cx="96" cy="62" r="4"></circle>
+  </svg>
+{%- endmacro %}
