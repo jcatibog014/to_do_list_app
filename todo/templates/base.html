@@ -16,6 +16,10 @@
       {# g.user is set in auth.py before every request (None when logged out). #}
       <nav class="account" aria-label="Account">
         {% if g.user %}
+          {# reminders.js shows this button only while the browser hasn't been asked yet. #}
+          <button id="enable-reminders" class="btn btn-small btn-ghost" type="button" hidden>
+            🔔<span class="hide-on-phone"> Turn on reminders</span>
+          </button>
           <span class="account-name">{{ g.user.username }}</span>
           <form method="post" action="{{ url_for('auth.logout') }}">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -30,12 +34,26 @@
   </header>
 
   <main class="wrap">
-    {# Messages saved with flash() in tasks.py show up once, on the next page. #}
-    {% for message in get_flashed_messages() %}
-      <p class="flash" role="status">{{ message }}</p>
+    {% if g.user %}
+      {# reminders.js puts a message here when a reminder comes due. #}
+      <div id="reminders" data-url="{{ url_for('tasks.reminders') }}" aria-live="polite"></div>
+    {% endif %}
+
+    {# Messages saved with flash() show up once, on the next page.
+       flash(message, "error") shows in red. #}
+    {% for category, message in get_flashed_messages(with_categories=true) %}
+      {% if category == 'error' %}
+        <p class="flash flash-error" role="alert">{{ message }}</p>
+      {% else %}
+        <p class="flash" role="status">{{ message }}</p>
+      {% endif %}
     {% endfor %}
 
     {% block content %}{% endblock %}
   </main>
+
+  {% if g.user %}
+    <script src="{{ url_for('static', filename='reminders.js') }}" defer></script>
+  {% endif %}
 </body>
 </html>

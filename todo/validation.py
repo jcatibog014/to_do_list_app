@@ -7,9 +7,25 @@ it easy to test (see tests/test_validation.py).
 import re
 from datetime import date
 
+from .recurrence import first_due, parse_repeat
+
 TITLE_MAX = 100
 DESCRIPTION_MAX = 500
 DATE_FORMAT = re.compile(r"[0-9]{4}-[0-9]{2}-[0-9]{2}")
+TIME_FORMAT = re.compile(r"([01][0-9]|2[0-3]):[0-5][0-9]")  # 24-hour clock, like 17:30
+TAG_LENGTH_MAX = 30
+TAG_FORMAT = re.compile(rf"[\w-]{{1,{TAG_LENGTH_MAX}}}")
+TAGS_MAX = 10
+LIST_NAME_MAX = 40
+
+# The reminder menu: minutes before the due time -> label.
+REMINDERS = {
+    0: "At the due time",
+    10: "10 minutes before",
+    30: "30 minutes before",
+    60: "1 hour before",
+    1440: "1 day before",
+}
 
 USERNAME_MIN = 3
 USERNAME_MAX = 30
@@ -24,6 +40,10 @@ def validate_task(form, today, existing_due_date=None):
     today             -- today's date, passed in so tests can choose the day
     existing_due_date -- when editing, the task's saved due date ('YYYY-MM-DD' or None)
 
+    The fields are title, description, due_date, due_time, repeat (words
+    like "every week"), remind_before (minutes, from REMINDERS), tags and
+    list_id. Only the title is required.
+
     `data` holds the cleaned values, ready to save.
     `errors` maps a field name to a message. The form is valid when it's empty.
     """
@@ -33,6 +53,11 @@ def validate_task(form, today, existing_due_date=None):
     title = form.get("title", "").strip()
     description = form.get("description", "").strip()
     due_text = form.get("due_date", "").strip()
+    time_text = form.get("due_time", "").strip()
+    repeat_text = form.get("repeat", "").strip()
+    remind_text = form.get("remind_before", "").strip()
+    tags_text = form.get("tags", "").strip()
+    list_text = form.get("list_id", "").strip()
 
     if not title:
         errors["title"] = "Title is required."
@@ -58,10 +83,63 @@ def validate_task(form, today, existing_due_date=None):
                 if due_date < today and due_text != existing_due_date:
                     errors["due_date"] = "Due date can't be in the past."
 
+    repeat = None
+    if repeat_text:
+        repeat = parse_repeat(repeat_text)
+        if repeat is None:
+            errors["repeat"] = "Try something like “every day”, “every 2 weeks” or “every 2nd Monday”."
+        elif due_date is None and "due_date" not in errors:
+            # A repeat needs a date to count from. Without one, start at the
+            # first day that fits: "every Friday" starts this Friday.
+            due_date = first_due(repeat, today)
+
+    due_time = None
+    if time_text:
+        if not TIME_FORMAT.fullmatch(time_text):
+            errors["due_time"] = "Enter the time as HH:MM, like 17:30."
+        elif due_date is None and "due_date" not in errors:
+            errors["due_time"] = "Add a due date for this time."
+        else:
+            due_time = time_text
+
+    remind_before = None
+    if remind_text:
+        if not remind_text.isdigit() or int(remind_text) not in REMINDERS:
+            errors["remind_before"] = "Choose a reminder from the list."
+        elif due_time is None and "due_time" not in errors:
+            errors["remind_before"] = "Set a due time to get a reminder."
+        else:
+            remind_before = int(remind_text)
+
+    # Tags can be typed as "home, errands" or "#home #errands".
+    tags = []
+    for word in re.split(r"[\s,]+", tags_text):
+        tag = word.lstrip("#").lower()
+        if tag and tag not in tags:
+            tags.append(tag)
+    if any(not TAG_FORMAT.fullmatch(tag) for tag in tags):
+        errors["tags"] = f"Tags can use letters, numbers, - and _, up to {TAG_LENGTH_MAX} characters each."
+    elif len(tags) > TAGS_MAX:
+        errors["tags"] = f"Use {TAGS_MAX} tags or fewer."
+
+    # The list's id comes from a menu. Whether that list belongs to the
+    # user needs the database, so tasks.py checks that part.
+    list_id = None
+    if list_text:
+        if list_text.isdigit():
+            list_id = int(list_text)
+        else:
+            errors["list_id"] = "Choose a list from the menu."
+
     data = {
         "title": title,
         "description": description,
         "due_date": due_date.isoformat() if due_date else None,
+        "due_time": due_time,
+        "repeat": repeat,
+        "remind_before": remind_before,
+        "tags": tags,
+        "list_id": list_id,
     }
     return data, errors
 
@@ -92,3 +170,17 @@ def validate_registration(form):
         errors["confirm"] = "The passwords don't match."
 
     return {"username": username, "password": password}, errors
+
+
+def validate_list_name(form):
+    """Return (name, error) for the "New list" form. error is None when it's fine.
+
+    Whether the user already has a list with that name needs the database,
+    so tasks.py checks that part.
+    """
+    name = " ".join(form.get("name", "").split())  # trim, and squash repeated spaces
+    if not name:
+        return name, "Give the list a name."
+    if len(name) > LIST_NAME_MAX:
+        return name, f"List names must be {LIST_NAME_MAX} characters or fewer."
+    return name, None

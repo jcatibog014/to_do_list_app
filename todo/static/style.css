@@ -128,6 +128,8 @@ input[type="text"],
 input[type="password"],
 input[type="search"],
 input[type="date"],
+input[type="time"],
+select,
 textarea {
   width: 100%;
   padding: 9px 12px;
@@ -139,11 +141,62 @@ textarea {
 }
 textarea { resize: vertical; }
 input:focus,
+select:focus,
 textarea:focus {
   border-color: var(--accent);
   outline: none;
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 20%, transparent);
 }
+
+/* ---------- Quick add ---------- */
+
+.quick-add {
+  margin-bottom: 16px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+.quick-row { display: flex; gap: 8px; }
+.quick-row input { flex: 1; min-width: 0; }
+.quick-add.has-error input { border-color: var(--danger); }
+.quick-add .hint { margin: 6px 0 0; }
+
+/* ---------- Lists ---------- */
+
+.lists {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.chip {
+  display: inline-block;
+  padding: 4px 12px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+}
+.chip:hover { border-color: color-mix(in srgb, var(--accent) 40%, var(--border)); }
+.chip.active { border-color: var(--accent); background: var(--accent); color: #fff; }
+
+/* <details> shows a small triangle by default. The chip doesn't need it. */
+.new-list summary { list-style: none; color: var(--muted); }
+.new-list summary::-webkit-details-marker { display: none; }
+.new-list[open] summary { border-color: var(--accent); color: var(--accent-strong); }
+.new-list form { display: flex; gap: 6px; margin-top: 6px; }
+.new-list input { min-width: 0; padding: 5px 10px; }
+
+.list-tools { display: flex; justify-content: flex-end; margin-top: 16px; }
+.filter-note { margin: -4px 0 12px; color: var(--muted); font-size: 0.9rem; }
 
 /* ---------- Search and filter tabs ---------- */
 
@@ -241,6 +294,15 @@ textarea:focus {
 .badge.today { background: color-mix(in srgb, var(--warning) 13%, transparent); color: var(--warning); }
 .badge.soon { background: color-mix(in srgb, var(--accent) 11%, transparent); color: var(--accent-strong); }
 
+/* The row of labels under a task: due date, reminder, repeat, list, tags. */
+.task-meta { display: flex; flex-wrap: wrap; gap: 6px; }
+.task-meta:empty { display: none; }
+.task-meta .badge { margin-top: 6px; }
+a.badge { text-decoration: none; }
+a.badge:hover { background: color-mix(in srgb, var(--accent) 16%, transparent); }
+.badge.tag { background: color-mix(in srgb, var(--success) 10%, transparent); color: var(--success); }
+.badge-list { border: 1px solid var(--border); background: var(--surface); }
+
 .task-actions { display: flex; flex: none; gap: 6px; }
 
 .empty {
@@ -268,6 +330,12 @@ textarea:focus {
   background: color-mix(in srgb, var(--danger) 7%, var(--surface));
   color: var(--danger);
 }
+.flash-reminder {
+  border-color: color-mix(in srgb, var(--warning) 35%, transparent);
+  background: color-mix(in srgb, var(--warning) 9%, var(--surface));
+  color: var(--warning);
+  font-weight: 600;
+}
 
 /* ---------- Form ---------- */
 
@@ -286,6 +354,9 @@ textarea:focus {
 .field.has-error textarea { border-color: var(--danger); }
 .error { margin: 6px 0 0; color: var(--danger); font-size: 0.9rem; }
 
+/* Two fields side by side, like Due date and Time. */
+.field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0 12px; }
+
 .form-actions { display: flex; gap: 8px; }
 
 /* ---------- Log in and sign up ---------- */
@@ -302,4 +373,6 @@ textarea:focus {
   .task { flex-wrap: wrap; }
   .task-actions { justify-content: flex-end; width: 100%; }
   .account-name { display: none; }
+  .hide-on-phone { display: none; }
+  .field-row { grid-template-columns: 1fr; }
 }

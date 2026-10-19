@@ -29,20 +29,33 @@ def init_db():
     db = get_db()
     with current_app.open_resource("schema.sql") as f:
         db.executescript(f.read().decode("utf8"))
-    add_user_id_column(db)
+    add_missing_columns(db)
 
 
-def add_user_id_column(db):
-    """Upgrade a database made before accounts existed.
+# Columns added to tasks after the first version, with their SQL types.
+NEW_TASK_COLUMNS = {
+    "user_id": "INTEGER REFERENCES users (id)",
+    "list_id": "INTEGER REFERENCES lists (id)",
+    "due_time": "TEXT",
+    "repeat": "TEXT",
+    "remind_before": "INTEGER",
+}
+
+
+def add_missing_columns(db):
+    """Upgrade a database made by an older version of the app.
 
     CREATE TABLE IF NOT EXISTS skips a tasks table that is already there,
-    so an old table never gets the new user_id column. Add it by hand.
-    Old tasks get NULL there, so no account sees them.
+    so an old table never gets new columns. Add them by hand. Old rows get
+    NULL in them: for user_id that means no account sees those tasks.
     """
     columns = [row["name"] for row in db.execute("PRAGMA table_info(tasks)")]
-    if "user_id" not in columns:
-        db.execute("ALTER TABLE tasks ADD COLUMN user_id INTEGER REFERENCES users (id)")
-        db.commit()
+    for name, sql_type in NEW_TASK_COLUMNS.items():
+        if name not in columns:
+            # Column names can't be ? placeholders. These come from the
+            # dict above, never from a user, so pasting them in is safe.
+            db.execute(f"ALTER TABLE tasks ADD COLUMN {name} {sql_type}")
+    db.commit()
 
 
 @click.command("init-db")
@@ -51,8 +64,8 @@ def init_db_command(reset):
     """Create the database (flask --app todo init-db [--reset])."""
     if reset:
         click.confirm("Delete ALL tasks and accounts?", abort=True)
-        get_db().execute("DROP TABLE IF EXISTS tasks")
-        get_db().execute("DROP TABLE IF EXISTS users")
+        for table in ["task_tags", "tags", "tasks", "lists", "users"]:
+            get_db().execute(f"DROP TABLE IF EXISTS {table}")
     init_db()
     click.echo("Database ready.")
 

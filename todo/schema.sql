@@ -9,14 +9,41 @@ CREATE TABLE IF NOT EXISTS users (
   created_at    TEXT    NOT NULL DEFAULT (datetime('now', 'localtime'))
 );
 
+-- Lists (projects) like "Work" or "Home". Tasks in no list are in the Inbox.
+CREATE TABLE IF NOT EXISTS lists (
+  id      INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL REFERENCES users (id),
+  name    TEXT    NOT NULL COLLATE NOCASE,
+  UNIQUE (user_id, name)  -- two people can each have a "Work" list, but one person can't have two
+);
+
 -- Every task belongs to one user, through user_id.
 CREATE TABLE IF NOT EXISTS tasks (
-  id           INTEGER PRIMARY KEY AUTOINCREMENT,
-  user_id      INTEGER NOT NULL REFERENCES users (id),
-  title        TEXT    NOT NULL,
-  description  TEXT    NOT NULL DEFAULT '',
-  due_date     TEXT,                              -- 'YYYY-MM-DD', or NULL for no due date
-  completed    INTEGER NOT NULL DEFAULT 0,        -- SQLite has no boolean: 0 = no, 1 = yes
-  created_at   TEXT    NOT NULL DEFAULT (datetime('now', 'localtime')),
-  completed_at TEXT                               -- set when the task is marked done
+  id            INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id       INTEGER NOT NULL REFERENCES users (id),
+  title         TEXT    NOT NULL,
+  description   TEXT    NOT NULL DEFAULT '',
+  due_date      TEXT,                              -- 'YYYY-MM-DD', or NULL for no due date
+  completed     INTEGER NOT NULL DEFAULT 0,        -- SQLite has no boolean: 0 = no, 1 = yes
+  created_at    TEXT    NOT NULL DEFAULT (datetime('now', 'localtime')),
+  completed_at  TEXT,                              -- set when the task is marked done
+  list_id       INTEGER REFERENCES lists (id),     -- NULL = Inbox
+  due_time      TEXT,                              -- 'HH:MM' on a 24-hour clock, or NULL
+  repeat        TEXT,                              -- a rule like 'week:1' (see recurrence.py), or NULL
+  remind_before INTEGER                            -- minutes before the due time, or NULL for no reminder
+);
+
+-- Tags are a "many-to-many" link: a task can have many tags, and a tag can
+-- be on many tasks. So the links get their own table, one row per pair.
+CREATE TABLE IF NOT EXISTS tags (
+  id      INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL REFERENCES users (id),
+  name    TEXT    NOT NULL,                        -- saved in lowercase, without the #
+  UNIQUE (user_id, name)
+);
+
+CREATE TABLE IF NOT EXISTS task_tags (
+  task_id INTEGER NOT NULL REFERENCES tasks (id),
+  tag_id  INTEGER NOT NULL REFERENCES tags (id),
+  PRIMARY KEY (task_id, tag_id)                    -- the same tag can't be on a task twice
 );
