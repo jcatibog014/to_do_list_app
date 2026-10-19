@@ -48,7 +48,7 @@ h1 { margin: 0; font-size: 1.5rem; line-height: 1.2; }
 /* ---------- Top bar ---------- */
 
 .topbar { background: var(--surface); border-bottom: 1px solid var(--border); }
-.topbar .wrap { display: flex; align-items: center; height: 56px; }
+.topbar .wrap { display: flex; align-items: center; gap: 12px; height: 56px; }
 
 .brand {
   display: inline-flex;
@@ -69,6 +69,17 @@ h1 { margin: 0; font-size: 1.5rem; line-height: 1.2; }
   background: var(--accent);
   color: #fff;
   font-size: 0.95rem;
+}
+
+/* margin-left: auto pushes the account links to the right end of the bar. */
+.account { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+.account-name {
+  overflow: hidden;
+  max-width: 14em;
+  color: var(--muted);
+  font-size: 0.9rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 main.wrap { padding-top: 24px; padding-bottom: 48px; }
@@ -114,6 +125,7 @@ main.wrap { padding-top: 24px; padding-bottom: 48px; }
 .btn-small { min-height: 34px; padding: 0 10px; font-size: 0.875rem; }
 
 input[type="text"],
+input[type="password"],
 input[type="search"],
 input[type="date"],
 textarea {
@@ -276,6 +288,11 @@ textarea:focus {
 
 .form-actions { display: flex; gap: 8px; }
 
+/* ---------- Log in and sign up ---------- */
+
+.auth { max-width: 420px; margin: 0 auto; }
+.switch { margin-top: 16px; color: var(--muted); text-align: center; }
+
 .error-card h1 { margin-bottom: 8px; }
 .error-card p { margin: 0 0 16px; color: var(--muted); }
 
@@ -284,4 +301,5 @@ textarea:focus {
 @media (max-width: 520px) {
   .task { flex-wrap: wrap; }
   .task-actions { justify-content: flex-end; width: 100%; }
+  .account-name { display: none; }
 }

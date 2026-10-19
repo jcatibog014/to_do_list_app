@@ -1,9 +1,16 @@
-"""Tests for validate_task(): plain function calls, no web server needed."""
+"""Tests for validate_task() and validate_registration(): plain function calls, no web server needed."""
 from datetime import date
 
 import pytest
 
-from todo.validation import DESCRIPTION_MAX, TITLE_MAX, validate_task
+from todo.validation import (
+    DESCRIPTION_MAX,
+    PASSWORD_MIN,
+    TITLE_MAX,
+    USERNAME_MAX,
+    validate_registration,
+    validate_task,
+)
 
 TODAY = date(2026, 10, 19)
 
@@ -79,3 +86,54 @@ def test_editing_cannot_move_due_date_to_another_past_day():
 def test_several_errors_are_reported_together():
     _, errors = validate_task({"title": "", "due_date": "nope"}, TODAY)
     assert set(errors) == {"title", "due_date"}
+
+
+# ---------- Sign-up form ----------
+
+def signup(username="new_user", password="secret123", confirm=None):
+    # By default the confirm box matches the password, like a careful user.
+    return {"username": username, "password": password,
+            "confirm": password if confirm is None else confirm}
+
+
+def test_valid_signup_is_cleaned():
+    data, errors = validate_registration(signup(username="  ana_99  "))
+    assert errors == {}
+    assert data == {"username": "ana_99", "password": "secret123"}
+
+
+def test_password_spaces_are_kept():
+    data, _ = validate_registration(signup(password=" spaced out "))
+    assert data["password"] == " spaced out "
+
+
+@pytest.mark.parametrize("username, message", [
+    ("", "Username is required."),
+    ("   ", "Username is required."),
+    ("ab", "Use 3 to 30 letters, numbers or underscores (_)."),
+    ("x" * (USERNAME_MAX + 1), "Use 3 to 30 letters, numbers or underscores (_)."),
+    ("ana maria", "Use 3 to 30 letters, numbers or underscores (_)."),
+    ("ana@mail", "Use 3 to 30 letters, numbers or underscores (_)."),
+])
+def test_bad_usernames_are_rejected(username, message):
+    _, errors = validate_registration(signup(username=username))
+    assert errors["username"] == message
+
+
+def test_username_length_limits_are_inclusive():
+    for name in ["abc", "x" * USERNAME_MAX]:
+        _, errors = validate_registration(signup(username=name))
+        assert "username" not in errors
+
+
+def test_password_minimum_length():
+    _, errors = validate_registration(signup(password="x" * PASSWORD_MIN))
+    assert errors == {}
+
+    _, errors = validate_registration(signup(password="x" * (PASSWORD_MIN - 1)))
+    assert errors["password"] == "Password must be at least 8 characters."
+
+
+def test_passwords_must_match():
+    _, errors = validate_registration(signup(password="secret123", confirm="secret124"))
+    assert errors == {"confirm": "The passwords don't match."}

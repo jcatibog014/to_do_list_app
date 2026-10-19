@@ -12,6 +12,20 @@
       <a class="brand" href="{{ url_for('tasks.index') }}">
         <span class="brand-mark" aria-hidden="true">✓</span> To-Do List
       </a>
+
+      {# g.user is set in auth.py before every request (None when logged out). #}
+      <nav class="account" aria-label="Account">
+        {% if g.user %}
+          <span class="account-name">{{ g.user.username }}</span>
+          <form method="post" action="{{ url_for('auth.logout') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button class="btn btn-small" type="submit">Log out</button>
+          </form>
+        {% else %}
+          <a class="btn btn-small btn-ghost" href="{{ url_for('auth.login') }}">Log in</a>
+          <a class="btn btn-small btn-primary" href="{{ url_for('auth.register') }}">Sign up</a>
+        {% endif %}
+      </nav>
     </div>
   </header>
 
