@@ -3,7 +3,8 @@
 {% block title %}{{ error.name }} · {% endblock %}
 
 {% block content %}
-<div class="card error-card">
+<div class="card error-card narrow">
+  <p class="empty-icon" aria-hidden="true">{{ '🔎' if error.code == 404 else '⚠️' }}</p>
   <h1>{{ error.name }}</h1>
   <p>{{ error.description }}</p>
   <a class="btn btn-primary" href="{{ url_for('tasks.index') }}">Back to my tasks</a>

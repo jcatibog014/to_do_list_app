@@ -10,8 +10,9 @@ A to-do list web app built with **Python**, **Flask** and **SQLite**, made to pr
 - **Edit** a task.
 - **Complete** a task, or mark it as not done again. Completing a repeating task creates the next one.
 - **Delete** a task, after a confirmation prompt.
-- **Lists** (projects) like Work or Home, plus an Inbox for tasks in no list. Deleting a list moves its tasks to the Inbox.
-- **Tags**: click a tag to see only the tasks that have it.
+- **Lists** (projects) like Work or Home, each with its own color, plus an Inbox for tasks in no list. Deleting a list moves its tasks to the Inbox.
+- **Tags**: click a tag to see only the tasks that have it. Each tag always gets the same color.
+- **Cards or list**: tasks show as colorful cards in a grid, or as a compact list. Switch with the Cards / List buttons.
 - **Today view**: what's due today, plus anything late.
 - **Filter** the list with the tabs: All, Today, Active, Overdue and Completed. Each tab shows how many tasks it holds.
 - **Search** tasks by title, description and tag.
@@ -56,6 +57,7 @@ Tasks made before accounts were added have no owner, so they no longer show up. 
 | `todo/tasks.py` | **CRUD**: `INSERT`, `SELECT`, `UPDATE` and `DELETE` with safe `?` placeholders, and a `JOIN`. **Logic**: filtering, counting, sorting and due-date labels. Post/Redirect/Get. A small JSON API (`/reminders`) |
 | `todo/quickadd.py` | **Parsing text** with regular expressions: named groups, whole-word matching, cutting matches out of a string |
 | `todo/recurrence.py` | **Date logic**: adding days, weeks and months, the 2nd Monday of a month, and stepping past old dates |
+| `todo/static/style.css` | **CSS**: variables, `color-mix()`, gradients, a responsive card grid with `auto-fill`, the same HTML in two layouts with `grid-template-areas`, and breakpoints |
 | `todo/static/reminders.js` | **JavaScript**: `fetch()`, timers, browser notifications and `localStorage` |
 | `todo/validation.py` | **Validation**: trimming input, required fields, length limits, date parsing, regular expressions, and rules that depend on other data |
 | `todo/auth.py` | **Logins**: password hashing, the session cookie, `g.user`, and why logout is a POST |

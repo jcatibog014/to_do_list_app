@@ -1,35 +1,71 @@
 /* Colors and sizes live here as variables. Change them in one place. */
 :root {
-  --bg: #f5f6fa;
+  --bg: #f3f4fa;
   --surface: #ffffff;
-  --text: #1d2433;
-  --muted: #5f6b7d;
-  --border: #e2e5ec;
-  --accent: #2563eb;
-  --accent-strong: #1d4ed8;
+  --surface-2: #f6f7fb;
+  --text: #171a2e;
+  --muted: #5c6378;
+  --border: #e3e5ef;
+  --accent: #5b4fe0;         /* indigo: buttons, links, focus */
+  --accent-strong: #4436c9;
+  --accent-2: #9333ea;       /* purple: the other end of gradients */
   --danger: #c81e1e;
   --warning: #a35200;
   --success: #15803d;
-  --radius: 12px;
-  --shadow: 0 1px 2px rgb(16 24 40 / 0.05), 0 1px 3px rgb(16 24 40 / 0.07);
+
+  /* The palette for lists and tags. .color-<name> below picks one. */
+  --blue: #2563eb;
+  --violet: #7c3aed;
+  --pink: #db2777;
+  --red: #dc2626;
+  --orange: #ea580c;
+  --amber: #d97706;
+  --green: #16a34a;
+  --teal: #0d9488;
+  --slate: #64748b;
+
+  --radius: 16px;
+  --radius-small: 10px;
+  --shadow-small: 0 1px 2px rgb(23 26 46 / 0.06);
+  --shadow: 0 1px 2px rgb(23 26 46 / 0.04), 0 4px 14px rgb(23 26 46 / 0.06);
+  --shadow-big: 0 2px 4px rgb(23 26 46 / 0.05), 0 14px 30px rgb(23 26 46 / 0.11);
   --font: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   color-scheme: light;
 }
+
+/* Each color class sets --tint. Anything inside can then use var(--tint),
+   so one class colors a card's stripe, its checkbox and its dot together. */
+.color-blue { --tint: var(--blue); }
+.color-violet { --tint: var(--violet); }
+.color-pink { --tint: var(--pink); }
+.color-red { --tint: var(--red); }
+.color-orange { --tint: var(--orange); }
+.color-amber { --tint: var(--amber); }
+.color-green { --tint: var(--green); }
+.color-teal { --tint: var(--teal); }
+.color-slate { --tint: var(--slate); }
+.color-accent { --tint: var(--accent); }
 
 * { box-sizing: border-box; }
 
 body {
   margin: 0;
-  background: var(--bg);
+  min-height: 100vh;
+  /* Two soft colored glows at the top, over the plain background. */
+  background:
+    radial-gradient(900px 420px at 0% -10%, color-mix(in srgb, var(--accent) 13%, transparent), transparent),
+    radial-gradient(700px 380px at 100% -5%, color-mix(in srgb, var(--accent-2) 11%, transparent), transparent),
+    var(--bg);
   color: var(--text);
   font: 16px/1.5 var(--font);
 }
 
 a { color: var(--accent-strong); }
 
-h1 { margin: 0; font-size: 1.5rem; line-height: 1.2; }
+h1 { margin: 0; font-size: 1.6rem; line-height: 1.2; letter-spacing: -0.01em; }
 
-.wrap { max-width: 720px; margin: 0 auto; padding: 0 16px; }
+.wrap { max-width: 1120px; margin: 0 auto; padding: 0 16px; }
+.narrow { max-width: 680px; margin-right: auto; margin-left: auto; }
 
 :focus-visible {
   outline: 3px solid color-mix(in srgb, var(--accent) 45%, transparent);
@@ -47,28 +83,38 @@ h1 { margin: 0; font-size: 1.5rem; line-height: 1.2; }
 
 /* ---------- Top bar ---------- */
 
-.topbar { background: var(--surface); border-bottom: 1px solid var(--border); }
-.topbar .wrap { display: flex; align-items: center; gap: 12px; height: 56px; }
+/* sticky keeps the bar on screen while scrolling. The see-through white
+   with a blur behind it is the "frosted glass" look. */
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+  background: color-mix(in srgb, var(--surface) 80%, transparent);
+  backdrop-filter: blur(12px);
+}
+.topbar .wrap { display: flex; align-items: center; gap: 12px; height: 60px; }
 
 .brand {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   color: var(--text);
   font-size: 1.1rem;
-  font-weight: 700;
+  font-weight: 800;
   text-decoration: none;
 }
 
 .brand-mark {
   display: grid;
   place-items: center;
-  width: 28px;
-  height: 28px;
-  border-radius: 8px;
-  background: var(--accent);
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--accent) 35%, transparent);
   color: #fff;
-  font-size: 0.95rem;
+  font-size: 1rem;
 }
 
 /* margin-left: auto pushes the account links to the right end of the bar. */
@@ -76,13 +122,17 @@ h1 { margin: 0; font-size: 1.5rem; line-height: 1.2; }
 .account-name {
   overflow: hidden;
   max-width: 14em;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--surface-2);
   color: var(--muted);
-  font-size: 0.9rem;
+  font-size: 0.875rem;
+  font-weight: 600;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-main.wrap { padding-top: 24px; padding-bottom: 48px; }
+main.wrap { padding-top: 24px; padding-bottom: 56px; }
 
 .page-head {
   display: flex;
@@ -98,10 +148,11 @@ main.wrap { padding-top: 24px; padding-bottom: 48px; }
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 6px;
   min-height: 40px;
-  padding: 0 14px;
+  padding: 0 16px;
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--radius-small);
   background: var(--surface);
   color: var(--text);
   font: inherit;
@@ -109,20 +160,35 @@ main.wrap { padding-top: 24px; padding-bottom: 48px; }
   text-decoration: none;
   white-space: nowrap;
   cursor: pointer;
+  transition: background-color 0.15s, box-shadow 0.15s, transform 0.15s;
 }
 .btn:hover { background: color-mix(in srgb, var(--accent) 6%, var(--surface)); }
+.btn:active { transform: translateY(1px); }
 
-.btn-primary { border-color: var(--accent); background: var(--accent); color: #fff; }
-.btn-primary:hover { background: var(--accent-strong); }
-
-.btn-danger { color: var(--danger); }
-.btn-danger:hover {
-  border-color: color-mix(in srgb, var(--danger) 40%, var(--border));
-  background: color-mix(in srgb, var(--danger) 7%, var(--surface));
+.btn-primary {
+  border-color: transparent;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--accent) 30%, transparent);
+  color: #fff;
+}
+.btn-primary:hover {
+  background: linear-gradient(135deg, var(--accent-strong), var(--accent-2));
+  box-shadow: 0 6px 16px color-mix(in srgb, var(--accent) 38%, transparent);
 }
 
+.btn-danger { color: var(--danger); }
+.btn-danger:hover { background: color-mix(in srgb, var(--danger) 8%, var(--surface)); }
+
 .btn-ghost { border-color: transparent; background: transparent; }
-.btn-small { min-height: 34px; padding: 0 10px; font-size: 0.875rem; }
+.btn-small { min-height: 34px; padding: 0 12px; font-size: 0.875rem; }
+
+/* A see-through white button, for use on a colored background. */
+.btn-glass {
+  border-color: rgb(255 255 255 / 0.35);
+  background: rgb(255 255 255 / 0.16);
+  color: #fff;
+}
+.btn-glass:hover { background: rgb(255 255 255 / 0.26); }
 
 input[type="text"],
 input[type="password"],
@@ -132,12 +198,13 @@ input[type="time"],
 select,
 textarea {
   width: 100%;
-  padding: 9px 12px;
+  padding: 10px 12px;
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--radius-small);
   background: var(--surface);
   color: var(--text);
   font: inherit;
+  transition: border-color 0.15s, box-shadow 0.15s;
 }
 textarea { resize: vertical; }
 input:focus,
@@ -145,63 +212,183 @@ select:focus,
 textarea:focus {
   border-color: var(--accent);
   outline: none;
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 20%, transparent);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 18%, transparent);
 }
+
+/* ---------- Layout: lists on the left, tasks on the right ---------- */
+
+.board { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 24px; align-items: start; }
+
+.sidebar {
+  position: sticky;
+  top: 84px;  /* just under the sticky top bar */
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--surface) 85%, transparent);
+  box-shadow: var(--shadow);
+}
+
+.sidebar-title {
+  margin: 4px 8px 8px;
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.lists { display: grid; gap: 2px; }
+
+.list-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: var(--radius-small);
+  color: var(--text);
+  font-size: 0.925rem;
+  font-weight: 600;
+  text-decoration: none;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+}
+.list-link:hover { background: var(--surface-2); }
+.list-link.active {
+  background: color-mix(in srgb, var(--tint) 12%, var(--surface));
+  color: color-mix(in srgb, var(--tint) 75%, black);
+}
+
+.dot {
+  flex: none;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--tint, var(--slate));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--tint, var(--slate)) 18%, transparent);
+}
+
+/* <details> shows a small triangle by default. This link doesn't need it. */
+.new-list { margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--border); }
+.new-list summary { list-style: none; color: var(--muted); }
+.new-list summary::-webkit-details-marker { display: none; }
+.new-list[open] summary { color: var(--accent-strong); }
+.new-list form { display: grid; gap: 8px; padding: 4px; }
+.new-list input[type="text"] { padding: 7px 10px; }
+
+/* Color circles. The radio button is hidden, and the span after it shows
+   the color. "input:checked + span" styles the span of the chosen one. */
+.swatches { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 0; padding: 0; border: 0; }
+.swatch { cursor: pointer; }
+.swatch span[aria-hidden],
+.swatch-button {
+  display: block;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 2px solid var(--surface);
+  border-radius: 50%;
+  background: var(--tint);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--tint) 40%, transparent);
+  cursor: pointer;
+}
+.swatch input:checked + span,
+.swatch-button.active { box-shadow: 0 0 0 2px var(--tint); }
+.swatch input:focus-visible + span {
+  outline: 3px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  outline-offset: 2px;
+}
+
+/* ---------- The colored banner ---------- */
+
+/* The gradient goes from a darker shade of the list's color to a mix with
+   purple. Darker shades keep the white text easy to read. */
+.hero {
+  --from: var(--accent);
+  --to: var(--accent-2);
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+  padding: 24px;
+  border-radius: calc(var(--radius) + 4px);
+  background: linear-gradient(135deg, var(--from), var(--to));
+  box-shadow: 0 10px 30px color-mix(in srgb, var(--from) 30%, transparent);
+  color: #fff;
+}
+.hero[class*="color-"] {
+  --from: color-mix(in srgb, var(--tint) 78%, black);
+  --to: color-mix(in srgb, var(--tint) 70%, var(--accent-2));
+}
+.hero h1 { font-size: 2rem; overflow-wrap: anywhere; }
+.eyebrow { margin: 0 0 4px; font-size: 0.85rem; font-weight: 600; opacity: 0.85; }
+.hero-sub { margin: 6px 0 0; font-weight: 500; opacity: 0.92; }
 
 /* ---------- Quick add ---------- */
 
 .quick-add {
   margin-bottom: 16px;
-  padding: 12px;
+  padding: 8px;
   border: 1px solid var(--border);
   border-radius: var(--radius);
   background: var(--surface);
   box-shadow: var(--shadow);
+  transition: border-color 0.15s, box-shadow 0.15s;
 }
-.quick-row { display: flex; gap: 8px; }
-.quick-row input { flex: 1; min-width: 0; }
-.quick-add.has-error input { border-color: var(--danger); }
-.quick-add .hint { margin: 6px 0 0; }
-
-/* ---------- Lists ---------- */
-
-.lists {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-start;
-  gap: 6px;
-  margin-bottom: 12px;
+/* :focus-within lights up the whole box while you type in it. */
+.quick-add:focus-within {
+  border-color: var(--accent);
+  box-shadow: var(--shadow), 0 0 0 4px color-mix(in srgb, var(--accent) 15%, transparent);
 }
+.quick-row { display: flex; align-items: center; gap: 8px; }
+.quick-icon {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--accent) 12%, var(--surface));
+  color: var(--accent-strong);
+  font-weight: 700;
+}
+.quick-row input[type="text"] {
+  flex: 1;
+  min-width: 0;
+  border-color: transparent;
+  font-size: 1.05rem;
+}
+.quick-row input[type="text"]:focus { border-color: transparent; box-shadow: none; }
+.quick-add.has-error { border-color: var(--danger); }
+.quick-add .error,
+.quick-add .hint { margin: 6px 8px 2px; }
 
-.chip {
-  display: inline-block;
-  padding: 4px 12px;
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  background: var(--surface);
-  color: var(--text);
+/* ---------- Search, layout switch and tabs ---------- */
+
+.toolbar { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; margin-bottom: 12px; }
+.search { display: flex; flex: 1; gap: 8px; min-width: 240px; }
+.search input { flex: 1; min-width: 0; }
+
+/* Two buttons joined into one control, like a light switch with two sides. */
+.segmented {
+  display: inline-flex;
+  padding: 3px;
+  border-radius: var(--radius-small);
+  background: color-mix(in srgb, var(--muted) 12%, var(--surface));
+}
+.segmented button {
+  padding: 6px 12px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
   font-size: 0.875rem;
   font-weight: 600;
-  text-decoration: none;
   cursor: pointer;
 }
-.chip:hover { border-color: color-mix(in srgb, var(--accent) 40%, var(--border)); }
-.chip.active { border-color: var(--accent); background: var(--accent); color: #fff; }
-
-/* <details> shows a small triangle by default. The chip doesn't need it. */
-.new-list summary { list-style: none; color: var(--muted); }
-.new-list summary::-webkit-details-marker { display: none; }
-.new-list[open] summary { border-color: var(--accent); color: var(--accent-strong); }
-.new-list form { display: flex; gap: 6px; margin-top: 6px; }
-.new-list input { min-width: 0; padding: 5px 10px; }
-
-.list-tools { display: flex; justify-content: flex-end; margin-top: 16px; }
-.filter-note { margin: -4px 0 12px; color: var(--muted); font-size: 0.9rem; }
-
-/* ---------- Search and filter tabs ---------- */
-
-.search { display: flex; gap: 8px; margin-bottom: 12px; }
-.search input { flex: 1; min-width: 0; }
+.segmented button.active { background: var(--surface); box-shadow: var(--shadow-small); color: var(--text); }
 
 .tabs {
   display: flex;
@@ -211,117 +398,219 @@ textarea:focus {
   overflow-x: auto;
 }
 
+/* Each tab has its own color, shown in its dot and when it's chosen. */
+.tab { --tab: var(--accent); }
+.tab-today { --tab: var(--amber); }
+.tab-active { --tab: var(--blue); }
+.tab-overdue { --tab: var(--red); }
+.tab-completed { --tab: var(--green); }
+
 .tab {
-  padding: 6px 12px;
-  border: 1px solid transparent;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border: 1px solid var(--border);
   border-radius: 999px;
+  background: var(--surface);
   color: var(--muted);
   font-size: 0.9rem;
   font-weight: 600;
   text-decoration: none;
   white-space: nowrap;
 }
-.tab:hover { border-color: var(--border); background: var(--surface); }
-.tab.active { background: var(--text); color: #fff; }
+.tab::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--tab);
+}
+.tab:hover { border-color: color-mix(in srgb, var(--tab) 45%, var(--border)); }
+.tab.active {
+  border-color: transparent;
+  background: color-mix(in srgb, var(--tab) 14%, var(--surface));
+  color: color-mix(in srgb, var(--tab) 70%, black);
+}
 
 .count {
   display: inline-block;
   min-width: 1.6em;
-  margin-left: 4px;
   padding: 0 6px;
   border-radius: 999px;
-  background: color-mix(in srgb, currentColor 15%, transparent);
+  background: color-mix(in srgb, currentColor 13%, transparent);
   font-size: 0.8rem;
   text-align: center;
 }
 
-/* ---------- Task list ---------- */
+.filter-note { margin: -4px 0 12px; color: var(--muted); font-size: 0.9rem; }
 
-.task-list { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+/* ---------- Tasks: shared by both layouts ---------- */
 
+.task-list { display: grid; gap: 12px; margin: 0; padding: 0; list-style: none; }
+
+/* The parts of a task are placed by name with grid-template-areas, so the
+   two layouts below can arrange the same HTML differently. */
 .task {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  padding: 14px;
+  position: relative;
+  display: grid;
+  gap: 10px 12px;
+  padding: 16px;
+  overflow: hidden;
   border: 1px solid var(--border);
   border-radius: var(--radius);
   background: var(--surface);
   box-shadow: var(--shadow);
+  transition: transform 0.15s, box-shadow 0.15s;
 }
+.task-check { grid-area: check; margin: 0; }
+.task-body { grid-area: body; min-width: 0; }
+.task-actions { grid-area: actions; display: flex; gap: 4px; }
 .task form { margin: 0; }
+
+/* The colored stripe, in the list's color. */
+.task::before { content: ""; position: absolute; background: var(--tint); }
 
 .check {
   display: grid;
-  flex: none;
   place-items: center;
   width: 26px;
   height: 26px;
   margin-top: 1px;
-  border: 2px solid color-mix(in srgb, var(--muted) 55%, transparent);
+  border: 2px solid color-mix(in srgb, var(--tint) 65%, transparent);
   border-radius: 50%;
   background: var(--surface);
   color: #fff;
   font-size: 14px;
   font-weight: 700;
   cursor: pointer;
+  transition: background-color 0.15s;
 }
-.check:hover { border-color: var(--success); }
+.check:hover { background: color-mix(in srgb, var(--tint) 15%, var(--surface)); }
 .task.done .check { border-color: var(--success); background: var(--success); }
 
-.task-body { flex: 1; min-width: 0; }
-.task-title { margin: 0; font-weight: 600; overflow-wrap: anywhere; }
+.task-title { margin: 0; font-weight: 650; overflow-wrap: anywhere; }
+.task.done { opacity: 0.72; }
 .task.done .task-title { color: var(--muted); text-decoration: line-through; }
 .task-desc {
-  margin: 2px 0 0;
+  margin: 4px 0 0;
   color: var(--muted);
   font-size: 0.925rem;
   white-space: pre-line;
   overflow-wrap: anywhere;
 }
+.task.is-overdue { border-color: color-mix(in srgb, var(--danger) 35%, var(--border)); }
+
+/* The row of labels under a task: due date, reminder, repeat, list, tags. */
+.task-meta { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.task-meta:empty { display: none; }
 
 .badge {
-  display: inline-block;
-  margin-top: 6px;
-  padding: 1px 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 9px;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--muted) 12%, transparent);
+  background: color-mix(in srgb, var(--muted) 11%, transparent);
   color: var(--muted);
   font-size: 0.8rem;
   font-weight: 600;
 }
-.badge.overdue { background: color-mix(in srgb, var(--danger) 11%, transparent); color: var(--danger); }
-.badge.today { background: color-mix(in srgb, var(--warning) 13%, transparent); color: var(--warning); }
-.badge.soon { background: color-mix(in srgb, var(--accent) 11%, transparent); color: var(--accent-strong); }
-
-/* The row of labels under a task: due date, reminder, repeat, list, tags. */
-.task-meta { display: flex; flex-wrap: wrap; gap: 6px; }
-.task-meta:empty { display: none; }
-.task-meta .badge { margin-top: 6px; }
+.badge.overdue { background: color-mix(in srgb, var(--danger) 12%, transparent); color: var(--danger); }
+.badge.today { background: color-mix(in srgb, var(--warning) 14%, transparent); color: var(--warning); }
+.badge.soon { background: color-mix(in srgb, var(--accent) 12%, transparent); color: var(--accent-strong); }
 a.badge { text-decoration: none; }
-a.badge:hover { background: color-mix(in srgb, var(--accent) 16%, transparent); }
-.badge.tag { background: color-mix(in srgb, var(--success) 10%, transparent); color: var(--success); }
-.badge-list { border: 1px solid var(--border); background: var(--surface); }
+a.badge:hover { filter: brightness(0.95); }
+/* Tags and list names use --tint from their .color-<name> class. */
+.badge.tag {
+  background: color-mix(in srgb, var(--tint) 12%, transparent);
+  color: color-mix(in srgb, var(--tint) 72%, black);
+}
+.badge-list { border: 1px solid var(--border); background: var(--surface); color: var(--text); }
+.badge-list .dot { width: 8px; height: 8px; box-shadow: none; }
 
-.task-actions { display: flex; flex: none; gap: 6px; }
+/* ---------- Cards layout ---------- */
+
+/* auto-fill makes as many 250px-wide columns as fit, then stretches them
+   to fill the row. A phone gets one column, a wide screen three. */
+.view-cards { grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 14px; }
+.view-cards .task {
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-rows: 1fr auto;
+  grid-template-areas:
+    "check body"
+    "actions actions";
+  padding-top: 20px;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--tint) 8%, var(--surface)), var(--surface) 70%);
+}
+.view-cards .task::before { inset: 0 0 auto 0; height: 5px; }
+.view-cards .task:hover { transform: translateY(-3px); box-shadow: var(--shadow-big); }
+.view-cards .task-actions {
+  justify-content: flex-end;
+  margin: 0 -8px -8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+/* Long notes are cut after 4 lines, so cards in a row stay a similar size. */
+.view-cards .task-desc {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+  line-clamp: 4;
+}
+
+/* ---------- List layout ---------- */
+
+.view-list { gap: 8px; }
+.view-list .task {
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-areas: "check body actions";
+  align-items: start;
+  padding: 12px 14px 12px 18px;
+  box-shadow: var(--shadow-small);
+}
+.view-list .task::before { inset: 0 auto 0 0; width: 4px; }
+.view-list .task:hover { box-shadow: var(--shadow); }
+.view-list .task-meta { margin-top: 6px; }
+
+/* ---------- Empty list ---------- */
 
 .empty {
-  padding: 40px 16px;
-  border: 1px dashed var(--border);
+  padding: 48px 16px;
+  border: 2px dashed color-mix(in srgb, var(--accent) 22%, var(--border));
   border-radius: var(--radius);
-  background: var(--surface);
+  background: color-mix(in srgb, var(--surface) 75%, transparent);
   color: var(--muted);
   text-align: center;
 }
+.empty p { margin: 0; }
+.empty-icon { margin: 0 0 8px; font-size: 2.4rem; line-height: 1; }
+
+.list-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 20px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+.list-tools .hint { margin-right: 4px; }
 
 /* ---------- Messages ---------- */
 
 .flash {
   margin: 0 0 16px;
-  padding: 10px 14px;
-  border: 1px solid color-mix(in srgb, var(--success) 30%, transparent);
-  border-radius: 8px;
-  background: color-mix(in srgb, var(--success) 9%, var(--surface));
+  padding: 12px 16px;
+  border: 1px solid color-mix(in srgb, var(--success) 25%, transparent);
+  border-left-width: 4px;
+  border-radius: var(--radius-small);
+  background: color-mix(in srgb, var(--success) 8%, var(--surface));
+  box-shadow: var(--shadow-small);
   color: var(--success);
   font-weight: 600;
 }
@@ -334,45 +623,79 @@ a.badge:hover { background: color-mix(in srgb, var(--accent) 16%, transparent); 
   border-color: color-mix(in srgb, var(--warning) 35%, transparent);
   background: color-mix(in srgb, var(--warning) 9%, var(--surface));
   color: var(--warning);
-  font-weight: 600;
 }
 
 /* ---------- Form ---------- */
 
 .card {
-  padding: 20px;
+  padding: 24px;
   border: 1px solid var(--border);
   border-radius: var(--radius);
   background: var(--surface);
   box-shadow: var(--shadow);
 }
 
-.field { margin-bottom: 16px; }
+.field { margin-bottom: 18px; }
 .field label { display: block; margin-bottom: 6px; font-weight: 600; }
 .hint { color: var(--muted); font-size: 0.875rem; font-weight: 400; }
 .field.has-error input,
+.field.has-error select,
 .field.has-error textarea { border-color: var(--danger); }
 .error { margin: 6px 0 0; color: var(--danger); font-size: 0.9rem; }
 
 /* Two fields side by side, like Due date and Time. */
-.field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0 12px; }
+.field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0 14px; }
 
-.form-actions { display: flex; gap: 8px; }
+.form-actions { display: flex; gap: 8px; padding-top: 4px; }
 
 /* ---------- Log in and sign up ---------- */
 
-.auth { max-width: 420px; margin: 0 auto; }
+.auth { max-width: 420px; margin: 16px auto 0; }
+.auth .card { position: relative; overflow: hidden; padding-top: 30px; }
+/* The same gradient as the buttons, as a stripe on top of the card. */
+.auth .card::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 6px;
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+}
 .switch { margin-top: 16px; color: var(--muted); text-align: center; }
 
+.error-card { margin-top: 24px; text-align: center; }
 .error-card h1 { margin-bottom: 8px; }
 .error-card p { margin: 0 0 16px; color: var(--muted); }
+
+/* ---------- Tablets: the lists move above the tasks ---------- */
+
+@media (max-width: 900px) {
+  /* minmax(0, 1fr), not 1fr: a plain 1fr column grows to fit its widest
+     content (like the row of tabs) and would push the page off the screen. */
+  .board { grid-template-columns: minmax(0, 1fr); gap: 16px; }
+  .sidebar { position: static; padding: 8px; }
+  .sidebar-title { display: none; }
+  .lists { display: flex; flex-wrap: wrap; gap: 6px; }
+  .list-link { padding: 6px 12px; border: 1px solid var(--border); border-radius: 999px; background: var(--surface); }
+  .new-list { margin: 0; padding: 0; border: 0; }
+  .new-list[open] { flex-basis: 100%; }
+}
 
 /* ---------- Phones ---------- */
 
 @media (max-width: 520px) {
-  .task { flex-wrap: wrap; }
-  .task-actions { justify-content: flex-end; width: 100%; }
+  h1 { font-size: 1.4rem; }
+  .hero { flex-direction: column; align-items: stretch; padding: 20px; }
+  .hero h1 { font-size: 1.6rem; }
   .account-name { display: none; }
   .hide-on-phone { display: none; }
   .field-row { grid-template-columns: 1fr; }
+  .search { min-width: 0; flex-basis: 100%; }
+  /* In the list layout, the buttons go under the text. */
+  .view-list .task {
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-areas:
+      "check body"
+      "actions actions";
+  }
+  .view-list .task-actions { justify-content: flex-end; }
 }

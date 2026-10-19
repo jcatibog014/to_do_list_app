@@ -14,6 +14,7 @@ CREATE TABLE IF NOT EXISTS lists (
   id      INTEGER PRIMARY KEY AUTOINCREMENT,
   user_id INTEGER NOT NULL REFERENCES users (id),
   name    TEXT    NOT NULL COLLATE NOCASE,
+  color   TEXT    NOT NULL DEFAULT 'blue',         -- one of LIST_COLORS in validation.py
   UNIQUE (user_id, name)  -- two people can each have a "Work" list, but one person can't have two
 );
 
