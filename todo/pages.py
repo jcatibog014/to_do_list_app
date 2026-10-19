@@ -1,15 +1,14 @@
-"""The Calendar and Stats pages, and the theme settings on the Stats page."""
+"""The Calendar and Stats pages. (Theme settings are on the profile page, in profile.py.)"""
 import calendar as cal
 from collections import Counter
 from datetime import date, timedelta
 
-from flask import Blueprint, g, redirect, render_template, request, url_for
+from flask import Blueprint, g, render_template, request
 
 from .auth import require_login
 from .db import get_db
 from .recurrence import add_months
-from .tasks import decorate, notify, today, user_lists
-from .validation import APPEARANCES, THEMES, validate_settings
+from .tasks import decorate, today, user_lists
 
 bp = Blueprint("pages", __name__)
 bp.before_request(require_login)
@@ -123,22 +122,7 @@ def stats():
 
     return render_template(
         "stats.html", totals=totals, current=current, best=best, week=week, week_max=week_max,
-        per_list=per_list, themes=THEMES, appearances=APPEARANCES,
+        per_list=per_list,
         member_since=g.user["created_at"][:10],
     )
 
-
-@bp.post("/settings")
-def settings():
-    (_, best), _ = user_streaks()
-    data, errors = validate_settings(request.form, best)
-    if errors:
-        for message in errors.values():
-            notify(message, "error")
-    else:
-        db = get_db()
-        db.execute("UPDATE users SET theme = ?, appearance = ? WHERE id = ?",
-                   (data["theme"], data["appearance"], g.user["id"]))
-        db.commit()
-        notify(f"Theme saved: {THEMES[data['theme']]['label']}, {APPEARANCES[data['appearance']].lower()}.")
-    return redirect(url_for("pages.stats"))

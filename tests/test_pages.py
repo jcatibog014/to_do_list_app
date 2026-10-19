@@ -1,4 +1,5 @@
-"""Tests for the Lists, Calendar and Stats pages, and themes."""
+"""Tests for the Lists, Calendar and Stats pages."""
+import re
 import sqlite3
 from datetime import date
 
@@ -20,16 +21,18 @@ def set_completed_at(app, task_id, when):
 # ---------- Navigation ----------
 
 @pytest.mark.parametrize("url, label", [
-    ("/", "Today"), ("/lists", "Lists"), ("/calendar", "Calendar"), ("/stats", "Stats"),
+    ("/", "Today"), ("/lists", "Lists"), ("/calendar", "Calendar"), ("/profile", "Profile"),
+    ("/stats", "Profile"),  # Stats lives under Profile
 ])
 def test_bottom_nav_marks_the_current_page(client, url, label):
     html = client.get(url).get_data(as_text=True)
-    assert html.count('aria-current="page"') >= 1
-    assert f'<span class="nav-icon" aria-hidden="true">' in html
-    assert "class=\"fab\"" in html  # the floating + button is on every page
+    # The lit tab in the bottom bar: its icon, then its label.
+    lit = re.search(r'<a class="active"[^>]*aria-current="page">\s*<span class="nav-icon"[^>]*>[^<]*</span>(\w+)', html)
+    assert lit and lit.group(1) == label
+    assert 'class="fab"' in html  # the floating + button is on every page
 
 
-@pytest.mark.parametrize("url", ["/lists", "/calendar", "/stats", "/focus"])
+@pytest.mark.parametrize("url", ["/lists", "/calendar", "/stats", "/focus", "/profile"])
 def test_new_pages_need_login(guest, url):
     assert guest.get(url).headers["Location"] == "/login"
 
@@ -137,35 +140,6 @@ def test_stats_page(client, add, app):
     assert '<p class="stat-number">2</p><p class="stat-label">open</p>' in html
     assert '<p class="stat-number">3</p><p class="stat-label">done</p>' in html
     assert '<span class="week-count">2</span>' in html  # two done today
-
-
-# ---------- Themes ----------
-
-def test_theme_is_on_the_page(client):
-    assert 'data-theme="default"' in client.get("/").get_data(as_text=True)
-
-
-def test_choose_a_free_theme_and_dark_mode(client, post):
-    response = post("/settings", {"theme": "ocean", "appearance": "dark"})
-    assert response.headers["Location"] == "/stats"
-    html = client.get("/").get_data(as_text=True)
-    assert 'data-theme="ocean"' in html
-    assert 'data-appearance="dark"' in html
-
-
-def test_locked_theme_is_refused(client, post):
-    post("/settings", {"theme": "sunset", "appearance": "light"})
-    html = client.get("/stats").get_data(as_text=True)
-    assert "Sunset unlocks after a 7-day streak." in html
-    assert 'data-theme="default"' in html
-
-
-def test_streak_unlocks_a_theme(client, post, add, app):
-    for n, day in enumerate([17, 18, 19], start=1):
-        add(f"Done {n}")
-        set_completed_at(app, n, f"2026-10-{day} 09:00:00")
-    post("/settings", {"theme": "matcha", "appearance": "system"})
-    assert 'data-theme="matcha"' in client.get("/").get_data(as_text=True)
 
 
 # ---------- Upgrading an old database ----------

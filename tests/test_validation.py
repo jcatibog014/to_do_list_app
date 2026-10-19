@@ -4,6 +4,7 @@ from datetime import date
 import pytest
 
 from todo.validation import (
+    AVATAR_CHOICES,
     DESCRIPTION_MAX,
     EMOJI_CHOICES,
     LIST_COLORS,
@@ -13,6 +14,8 @@ from todo.validation import (
     next_list_color,
     validate_list_color,
     validate_list_name,
+    validate_password_change,
+    validate_profile,
     validate_registration,
     validate_settings,
     validate_subtask,
@@ -296,3 +299,26 @@ def test_validate_settings():
     assert errors == {}
     _, errors = validate_settings({"theme": "plaid", "appearance": "neon"}, best_streak=99)
     assert set(errors) == {"theme", "appearance"}
+
+
+# ---------- Profile ----------
+
+def test_validate_profile():
+    data, errors = validate_profile({"username": " ana ", "display_name": " Ana   Cruz ", "avatar": "🦊"})
+    assert errors == {}
+    assert data == {"username": "ana", "display_name": "Ana Cruz", "avatar": "🦊"}
+
+    data, _ = validate_profile({"username": "ana"})
+    assert (data["display_name"], data["avatar"]) == (None, None)
+
+
+def test_every_offered_avatar_is_valid():
+    for emoji in AVATAR_CHOICES:
+        assert validate_profile({"username": "ana", "avatar": emoji})[1] == {}, emoji
+
+
+def test_validate_password_change():
+    assert validate_password_change({"current_password": "old one!", "new_password": "new one!!",
+                                     "confirm_password": "new one!!"}) == ("new one!!", {})
+    _, errors = validate_password_change({"new_password": "short", "confirm_password": "short"})
+    assert set(errors) == {"current_password", "new_password"}

@@ -54,30 +54,7 @@
   </section>
 </div>
 
-<section class="card" id="theme">
-  <h2>Theme</h2>
-  <form method="post" action="{{ url_for('pages.settings') }}">
-    {{ ui.csrf() }}
-    <fieldset class="theme-picker">
-      <legend>Colors</legend>
-      {% for key, theme in themes.items() %}
-        {% set locked = theme.unlock > best %}
-        <label class="theme-option theme-{{ key }}{% if locked %} locked{% endif %}">
-          <input type="radio" name="theme" value="{{ key }}"
-                 {% if g.user.theme == key %}checked{% endif %} {% if locked %}disabled{% endif %}>
-          <span class="theme-swatch" aria-hidden="true"></span>
-          <span class="theme-name">{{ theme.label }}</span>
-          {% if locked %}<span class="hint">🔒 Unlocks at a {{ theme.unlock }}-day streak</span>{% endif %}
-        </label>
-      {% endfor %}
-    </fieldset>
-    <fieldset class="appearance-picker">
-      <legend>Light or dark</legend>
-      {% for key, label in appearances.items() %}
-        <label><input type="radio" name="appearance" value="{{ key }}" {% if g.user.appearance == key %}checked{% endif %}> {{ label }}</label>
-      {% endfor %}
-    </fieldset>
-    <button class="btn btn-primary" type="submit">Save theme</button>
-  </form>
-</section>
+<p class="list-tools">
+  <a href="{{ url_for('profile.index') }}#theme">🎨 Change your theme on your profile</a>
+</p>
 {% endblock %}

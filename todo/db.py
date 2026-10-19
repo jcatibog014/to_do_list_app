@@ -50,6 +50,8 @@ NEW_COLUMNS = {
     "users": {
         "theme": "TEXT NOT NULL DEFAULT 'default'",
         "appearance": "TEXT NOT NULL DEFAULT 'system'",
+        "display_name": "TEXT",
+        "avatar": "TEXT",
     },
 }
 

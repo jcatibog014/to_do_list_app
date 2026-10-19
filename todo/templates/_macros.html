@@ -17,6 +17,13 @@
   {% endif %}
 {%- endmacro %}
 
+{# A round profile picture: the user's emoji, or the first letter of their name. #}
+{% macro avatar(user, size='small') -%}
+  <span class="avatar avatar-{{ size }}" aria-hidden="true">
+    {{- user.avatar or (user.display_name or user.username)[0]|upper -}}
+  </span>
+{%- endmacro %}
+
 {% macro csrf() -%}
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 {%- endmacro %}

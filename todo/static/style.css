@@ -1120,10 +1120,12 @@ p.flash.flash-error:not(.toast) {
 .appearance-picker legend { margin-bottom: 8px; font-weight: 700; }
 .theme-option {
   display: grid;
+  flex: 1 1 120px; /* share the row evenly */
   gap: 6px;
   justify-items: center;
-  min-width: 120px;
+  align-content: start;
   padding: 12px;
+  text-align: center;
   border: 2px solid var(--border);
   border-radius: var(--radius);
   cursor: pointer;
@@ -1287,3 +1289,39 @@ fieldset.field { padding: 0; border: 0; }
 
   .focus-button { width: 80px; height: 80px; }
 }
+
+/* ==========================================================================
+   Profile
+   ========================================================================== */
+
+/* A round picture: an emoji, or the first letter of the name on the theme's gradient. */
+.avatar {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  color: #fff;
+  font-size: 0.95rem;
+  font-weight: 800;
+  line-height: 1;
+}
+.avatar-big {
+  width: 76px;
+  height: 76px;
+  border: 3px solid rgb(255 255 255 / 0.7);
+  background: rgb(255 255 255 / 0.2);
+  font-size: 2.3rem;
+}
+.account-link { display: flex; align-items: center; gap: 8px; color: inherit; text-decoration: none; border-radius: 999px; }
+.account-link:hover .account-name { background: color-mix(in srgb, var(--accent) 12%, var(--surface)); }
+
+.profile .card { margin-top: 16px; }
+.profile-hero { align-items: center; flex-wrap: wrap; }
+.profile-id { display: flex; align-items: center; gap: 16px; min-width: 0; }
+.profile-handle { margin: 4px 0 0; font-weight: 600; opacity: 0.85; }
+.profile-stats { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 18px; }
+.profile-stats p { margin: 0; font-size: 0.9rem; }
+.profile-stats strong { display: block; font-size: 1.3rem; }

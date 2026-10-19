@@ -1,10 +1,12 @@
 {% import "_macros.html" as ui with context %}
 {# The main pages, for the top bar on big screens and the bottom bar on phones. #}
+{# Each item: the page, its icon, its label, and the pages that light it up
+   (Stats lives under Profile, to keep the bottom bar at 4 tabs). #}
 {% set nav_items = [
-  ('tasks.index', '🏠', 'Today'),
-  ('lists.index', '🗂️', 'Lists'),
-  ('pages.calendar', '📅', 'Calendar'),
-  ('pages.stats', '📊', 'Stats'),
+  ('tasks.index', '🏠', 'Today', ['tasks.index', 'tasks.focus']),
+  ('lists.index', '🗂️', 'Lists', ['lists.index']),
+  ('pages.calendar', '📅', 'Calendar', ['pages.calendar']),
+  ('profile.index', '👤', 'Profile', ['profile.index', 'pages.stats']),
 ] %}
 {# Which page the Undo button should come back to (see go_back() in tasks.py). #}
 {% set here = {'tasks.focus': 'focus', 'pages.calendar': 'calendar', 'lists.index': 'lists'}.get(request.endpoint) %}
@@ -29,9 +31,9 @@
 
       {% if g.user %}
         <nav class="main-nav" aria-label="Main">
-          {% for endpoint, icon, label in nav_items %}
-            <a class="nav-link{% if request.endpoint == endpoint %} active{% endif %}" href="{{ url_for(endpoint) }}"
-               {% if request.endpoint == endpoint %}aria-current="page"{% endif %}>
+          {% for endpoint, icon, label, lit in nav_items %}
+            <a class="nav-link{% if request.endpoint in lit %} active{% endif %}" href="{{ url_for(endpoint) }}"
+               {% if request.endpoint in lit %}aria-current="page"{% endif %}>
               <span aria-hidden="true">{{ icon }}</span> {{ label }}
             </a>
           {% endfor %}
@@ -45,7 +47,11 @@
           <button id="enable-reminders" class="btn btn-small btn-ghost" type="button" hidden>
             🔔<span class="hide-on-phone"> Turn on reminders</span>
           </button>
-          <span class="account-name">{{ g.user.username }}</span>
+          {# Your picture and name, linking to the profile page. #}
+          <a class="account-link" href="{{ url_for('profile.index') }}" aria-label="Your profile">
+            {{ ui.avatar(g.user) }}
+            <span class="account-name">{{ g.user.username }}</span>
+          </a>
           <form method="post" action="{{ url_for('auth.logout') }}">
             {{ ui.csrf() }}
             <button class="btn btn-small" type="submit">Log out</button>
@@ -105,9 +111,9 @@
     </div>
 
     <nav class="bottom-nav" aria-label="Main">
-      {% for endpoint, icon, label in nav_items %}
-        <a class="{% if request.endpoint == endpoint %}active{% endif %}" href="{{ url_for(endpoint) }}"
-           {% if request.endpoint == endpoint %}aria-current="page"{% endif %}>
+      {% for endpoint, icon, label, lit in nav_items %}
+        <a class="{% if request.endpoint in lit %}active{% endif %}" href="{{ url_for(endpoint) }}"
+           {% if request.endpoint in lit %}aria-current="page"{% endif %}>
           <span class="nav-icon" aria-hidden="true">{{ icon }}</span>{{ label }}
         </a>
       {% endfor %}

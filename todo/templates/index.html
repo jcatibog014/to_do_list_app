@@ -11,7 +11,7 @@
     <h1>{{ heading }}</h1>
     {# app.js swaps "Hello" for "Good morning/afternoon/evening" using your device's clock. #}
     <p class="greeting">
-      <span data-hello>Hello</span>, {{ g.user.username }}!
+      <span data-hello>Hello</span>, {{ g.user.display_name or g.user.username }}!
       {% set due = counts['today'] %}
       {% if due %}
         You have {{ due }} task{{ 's' if due != 1 }} today{% if counts['overdue'] %} ({{ counts['overdue'] }} overdue){% endif %}.

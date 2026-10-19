@@ -27,7 +27,7 @@ def create_app(test_config=None):
 
     os.makedirs(app.instance_path, exist_ok=True)
 
-    from . import auth, csrf, db, lists, pages, tasks
+    from . import auth, csrf, db, lists, pages, profile, tasks
 
     db.init_app(app)
     # auth goes before csrf, so g.user is already known if the CSRF check
@@ -37,4 +37,5 @@ def create_app(test_config=None):
     app.register_blueprint(tasks.bp)
     app.register_blueprint(lists.bp)
     app.register_blueprint(pages.bp)
+    app.register_blueprint(profile.bp)
     return app

@@ -8,7 +8,9 @@ CREATE TABLE IF NOT EXISTS users (
   password_hash TEXT    NOT NULL,
   created_at    TEXT    NOT NULL DEFAULT (datetime('now', 'localtime')),
   theme         TEXT    NOT NULL DEFAULT 'default',  -- one of THEMES in validation.py
-  appearance    TEXT    NOT NULL DEFAULT 'system'    -- 'light', 'dark', or 'system' to follow the device
+  appearance    TEXT    NOT NULL DEFAULT 'system',   -- 'light', 'dark', or 'system' to follow the device
+  display_name  TEXT,                                -- "Janelle", shown instead of the username; NULL = none
+  avatar        TEXT                                 -- an emoji like '🦊', or NULL for the first letter
 );
 
 -- Lists (projects) like "Work" or "Home". Tasks in no list are in the Inbox.

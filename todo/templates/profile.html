@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+{% import "_macros.html" as ui with context %}
+
+{% block title %}Profile · {% endblock %}
+
+{# One labelled text box with its error, used by every field below. #}
+{% macro text_field(name, label, value='', errors={}, type='text', hint='', extra='') -%}
+  <div class="field{% if errors[name] %} has-error{% endif %}">
+    <label for="{{ name }}">{{ label }}{% if hint %} <span class="hint">{{ hint }}</span>{% endif %}</label>
+    <input id="{{ name }}" name="{{ name }}" type="{{ type }}" value="{{ value }}" {{ extra|safe }}
+           {% if errors[name] %}aria-invalid="true" aria-describedby="{{ name }}-error"{% endif %}>
+    {% if errors[name] %}<p class="error" id="{{ name }}-error">{{ errors[name] }}</p>{% endif %}
+  </div>
+{%- endmacro %}
+
+{% block content %}
+<div class="narrow profile">
+  <header class="hero profile-hero">
+    <div class="profile-id">
+      {{ ui.avatar(g.user, 'big') }}
+      <div>
+        <p class="eyebrow">Member since {{ member_since }}</p>
+        <h1>{{ g.user.display_name or g.user.username }}</h1>
+        <p class="profile-handle">@{{ g.user.username }}</p>
+      </div>
+    </div>
+    <div class="profile-stats">
+      <p><strong>🔥 {{ current }}</strong> day streak</p>
+      <p><strong>{{ counts.done }}</strong> done</p>
+      <p><strong>{{ counts.open }}</strong> open</p>
+      <a class="btn btn-glass btn-small" href="{{ url_for('pages.stats') }}">📊 See all stats</a>
+    </div>
+  </header>
+
+  <section class="card" id="info">
+    <h2>Your info</h2>
+    {% if info_errors %}
+      <p class="flash flash-error" role="alert">Please fix {{ 'the error' if info_errors|length == 1 else 'the errors' }} below.</p>
+    {% endif %}
+    <form method="post" action="{{ url_for('profile.update_info') }}">
+      {{ ui.csrf() }}
+      {# Emoji tiles, like the task form: the radio button is hidden and the span after it is the tile. #}
+      <fieldset class="field emoji-picker{% if info_errors.avatar %} has-error{% endif %}"
+                {% if info_errors.avatar %}aria-describedby="avatar-error"{% endif %}>
+        <legend>Picture</legend>
+        {% set current_avatar = info_form.get('avatar') or '' %}
+        <label class="emoji-option">
+          <input class="visually-hidden" type="radio" name="avatar" value="" {% if not current_avatar %}checked{% endif %}>
+          <span aria-hidden="true">{{ (g.user.display_name or g.user.username)[0]|upper }}</span>
+          <span class="visually-hidden">Just my first letter</span>
+        </label>
+        {% for emoji in avatar_choices %}
+          <label class="emoji-option">
+            <input class="visually-hidden" type="radio" name="avatar" value="{{ emoji }}" {% if current_avatar == emoji %}checked{% endif %}>
+            <span>{{ emoji }}</span>
+          </label>
+        {% endfor %}
+        {% if info_errors.avatar %}<p class="error" id="avatar-error">{{ info_errors.avatar }}</p>{% endif %}
+      </fieldset>
+
+      <div class="field-row">
+        {{ text_field('display_name', 'Your name', info_form.get('display_name', ''), info_errors,
+                      hint='(optional, used in your greeting)',
+                      extra='maxlength="' ~ display_name_max ~ '" autocomplete="name" placeholder="e.g. Janelle"') }}
+        {{ text_field('username', 'Username', info_form.get('username', ''), info_errors,
+                      hint='(you log in with this)',
+                      extra='required maxlength="' ~ username_max ~ '" autocomplete="username"') }}
+      </div>
+      <button class="btn btn-primary" type="submit">Save info</button>
+    </form>
+  </section>
+
+  <section class="card" id="password">
+    <h2>Password</h2>
+    {# The password boxes always start empty: the server never sends a password back. #}
+    <form method="post" action="{{ url_for('profile.change_password') }}">
+      {{ ui.csrf() }}
+      {{ text_field('current_password', 'Current password', '', password_errors, type='password',
+                    extra='required autocomplete="current-password"') }}
+      <div class="field-row">
+        {{ text_field('new_password', 'New password', '', password_errors, type='password',
+                      hint='(at least ' ~ password_min ~ ' characters)',
+                      extra='required minlength="' ~ password_min ~ '" autocomplete="new-password"') }}
+        {{ text_field('confirm_password', 'Type it again', '', password_errors, type='password',
+                      extra='required autocomplete="new-password"') }}
+      </div>
+      <button class="btn btn-primary" type="submit">Change password</button>
+    </form>
+  </section>
+
+  <section class="card" id="theme">
+    <h2>Theme</h2>
+    <form method="post" action="{{ url_for('profile.change_theme') }}">
+      {{ ui.csrf() }}
+      <fieldset class="theme-picker">
+        <legend>Colors</legend>
+        {% for key, theme in themes.items() %}
+          {% set locked = theme.unlock > best %}
+          <label class="theme-option theme-{{ key }}{% if locked %} locked{% endif %}">
+            <input type="radio" name="theme" value="{{ key }}"
+                   {% if g.user.theme == key %}checked{% endif %} {% if locked %}disabled{% endif %}>
+            <span class="theme-swatch" aria-hidden="true"></span>
+            <span class="theme-name">{{ theme.label }}</span>
+            {% if locked %}<span class="hint">🔒 Unlocks at a {{ theme.unlock }}-day streak</span>{% endif %}
+          </label>
+        {% endfor %}
+      </fieldset>
+      <fieldset class="appearance-picker">
+        <legend>Light or dark</legend>
+        {% for key, label in appearances.items() %}
+          <label><input type="radio" name="appearance" value="{{ key }}" {% if g.user.appearance == key %}checked{% endif %}> {{ label }}</label>
+        {% endfor %}
+      </fieldset>
+      <button class="btn btn-primary" type="submit">Save theme</button>
+    </form>
+  </section>
+</div>
+{% endblock %}

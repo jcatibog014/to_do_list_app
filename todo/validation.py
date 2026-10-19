@@ -48,6 +48,11 @@ THEMES = {
 }
 APPEARANCES = {"system": "Match my device", "light": "Light", "dark": "Dark"}
 
+# The profile picture choices. Nobody uploads a photo: an emoji is enough.
+AVATAR_CHOICES = ["😀", "😎", "🦊", "🐱", "🐼", "🐸", "🌸", "🌈",
+                  "⚡", "🍀", "🎧", "🚀", "🧋", "🎨", "⚽", "🦄"]
+DISPLAY_NAME_MAX = 40
+
 USERNAME_MIN = 3
 USERNAME_MAX = 30
 USERNAME_FORMAT = re.compile(rf"[A-Za-z0-9_]{{{USERNAME_MIN},{USERNAME_MAX}}}")
@@ -223,19 +228,67 @@ def validate_registration(form):
     password = form.get("password", "")
     confirm = form.get("confirm", "")
 
-    if not username:
-        errors["username"] = "Username is required."
-    elif not USERNAME_FORMAT.fullmatch(username):
-        errors["username"] = (
-            f"Use {USERNAME_MIN} to {USERNAME_MAX} letters, numbers or underscores (_)."
-        )
-
-    if len(password) < PASSWORD_MIN:
-        errors["password"] = f"Password must be at least {PASSWORD_MIN} characters."
+    # The walrus operator := saves the result and checks it in one step.
+    if error := username_error(username):
+        errors["username"] = error
+    if error := password_error(password):
+        errors["password"] = error
     elif password != confirm:
         errors["confirm"] = "The passwords don't match."
 
     return {"username": username, "password": password}, errors
+
+
+def username_error(username):
+    """The problem with a username, or None. Shared by sign-up and the profile."""
+    if not username:
+        return "Username is required."
+    if not USERNAME_FORMAT.fullmatch(username):
+        return f"Use {USERNAME_MIN} to {USERNAME_MAX} letters, numbers or underscores (_)."
+    return None
+
+
+def password_error(password):
+    if len(password) < PASSWORD_MIN:
+        return f"Password must be at least {PASSWORD_MIN} characters."
+    return None
+
+
+def validate_profile(form):
+    """Return (data, errors) for the "Your info" form on the profile page.
+
+    Whether the new username is taken needs the database, so profile.py
+    checks that part.
+    """
+    errors = {}
+    username = form.get("username", "").strip()
+    display_name = " ".join(form.get("display_name", "").split()) or None  # squash extra spaces
+    avatar = form.get("avatar", "").strip() or None
+
+    if error := username_error(username):
+        errors["username"] = error
+    if display_name and len(display_name) > DISPLAY_NAME_MAX:
+        errors["display_name"] = f"Your name must be {DISPLAY_NAME_MAX} characters or fewer."
+    if avatar and not EMOJI_FORMAT.fullmatch(avatar):
+        errors["avatar"] = "Pick one of the pictures."
+    return {"username": username, "display_name": display_name, "avatar": avatar}, errors
+
+
+def validate_password_change(form):
+    """Return (new_password, errors) for the "Change password" form.
+
+    Whether the current password is right needs the saved hash, so
+    profile.py checks that part.
+    """
+    errors = {}
+    new = form.get("new_password", "")
+    if not form.get("current_password"):
+        errors["current_password"] = "Type your current password."
+    if error := password_error(new):
+        errors["new_password"] = error
+    elif new != form.get("confirm_password", ""):
+        errors["confirm_password"] = "The new passwords don't match."
+    return new, errors
 
 
 def validate_list_name(form):
