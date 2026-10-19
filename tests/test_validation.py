@@ -5,9 +5,12 @@ import pytest
 
 from todo.validation import (
     DESCRIPTION_MAX,
+    LIST_COLORS,
     PASSWORD_MIN,
     TITLE_MAX,
     USERNAME_MAX,
+    next_list_color,
+    validate_list_color,
     validate_list_name,
     validate_registration,
     validate_task,
@@ -223,3 +226,18 @@ def test_list_name_is_tidied():
 def test_bad_list_names():
     assert validate_list_name({"name": "   "})[1] == "Give the list a name."
     assert "40 characters" in validate_list_name({"name": "x" * 41})[1]
+
+
+# ---------- List colors ----------
+
+def test_list_color():
+    assert validate_list_color({"color": "teal"}) == ("teal", None)
+    assert validate_list_color({"color": "plaid"}) == (None, "Pick one of the colors.")
+    assert validate_list_color({}) == (None, "Pick one of the colors.")
+    assert validate_list_color({}, default="green") == ("green", None)
+
+
+def test_next_list_color_goes_round_the_palette():
+    assert next_list_color(0) == LIST_COLORS[0]
+    assert next_list_color(1) == LIST_COLORS[1]
+    assert next_list_color(len(LIST_COLORS)) == LIST_COLORS[0]

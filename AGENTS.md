@@ -15,7 +15,7 @@ Python 3.13 is at `%LOCALAPPDATA%\Programs\Python\Python313\python.exe` and is *
 ## Architecture
 
 - `todo/__init__.py` holds `create_app(test_config)`. Its config includes `DATABASE` (`instance/todo.sqlite`, which git ignores) and `TODAY`, a function returning today's date. Use `tasks.today()`, never `date.today()` directly, so tests can fix the date.
-- `todo/db.py`: `get_db()` keeps one connection per request on `g`, with `row_factory = sqlite3.Row`. `init_db()` runs `schema.sql` on startup. The schema uses `CREATE TABLE IF NOT EXISTS`. A new column in `tasks` must also go in `NEW_TASK_COLUMNS`, so `add_missing_columns()` adds it to older databases with `ALTER TABLE` (new tables are created by `schema.sql` on their own).
+- `todo/db.py`: `get_db()` keeps one connection per request on `g`, with `row_factory = sqlite3.Row`. `init_db()` runs `schema.sql` on startup. The schema uses `CREATE TABLE IF NOT EXISTS`. A new column in an existing table must also go in `NEW_COLUMNS` (by table), so `add_missing_columns()` adds it to older databases with `ALTER TABLE` (new tables are created by `schema.sql` on their own).
 - `todo/auth.py` is the `auth` blueprint: `/register`, `/login` and `/logout` (POST only). Passwords are stored with werkzeug's `generate_password_hash`. Logging in puts `user_id` in the session, and `load_logged_in_user()` sets `g.user` (a row, or `None`) before every request.
 - `todo/tasks.py` is the `tasks` blueprint with every task route. Always pass SQL values as `?` placeholders.
   - `require_login()` sends logged-out visitors to `/login`. Every task query filters on `user_id = g.user["id"]`, and `get_task_or_404()` returns 404 for someone else's task.
@@ -28,7 +28,7 @@ Python 3.13 is at `%LOCALAPPDATA%\Programs\Python\Python313\python.exe` and is *
 - `todo/quickadd.py`: `parse_quick_add(text, today)` cuts the repeat, date, time and `#tags` out of a line and leaves the title. `quick_add()` turns the result into form fields and runs `validate_task`, so both paths share one set of checks.
 - `todo/recurrence.py`: repeat rules are codes like `day:3`, `week:1:4`, `weekdays` and `nth:2:0`. `parse_repeat()` and `describe_repeat()` must round-trip, because the edit form shows the description.
 - `todo/validation.py`: `validate_task(form, today, existing_due_date)` and `validate_registration(form)` return `(data, errors)`, and `validate_list_name(form)` returns `(name, error)`. It must not import Flask. On errors, the views re-render `form.html` with HTTP 400 and keep the user's input.
-  - To add a field, update `schema.sql` (plus `NEW_TASK_COLUMNS` in `db.py`), `validate_task`, `insert_task()` and the UPDATE in `edit()`, `task_form()`, and `form.html`. Each field shows its error in `<p class="error" id="{name}-error">`.
+  - To add a field, update `schema.sql` (plus `NEW_COLUMNS` in `db.py`), `validate_task`, `insert_task()` and the UPDATE in `edit()`, `task_form()`, and `form.html`. Each field shows its error in `<p class="error" id="{name}-error">`.
 - `todo/csrf.py`: every POST form must include `<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">`. Otherwise the request gets 400.
 - Error pages (400, 404) render `error.html` through `error_page()` in `tasks.py`.
 - Tests live in `tests/`.
@@ -37,5 +37,7 @@ Python 3.13 is at `%LOCALAPPDATA%\Programs\Python\Python313\python.exe` and is *
 
 ## Conventions
 
-- Styling: `todo/static/style.css`, with colors as CSS variables on `:root`, `color-mix(in srgb, …)`, light theme only, and a phone breakpoint at 520px.
+- Styling: `todo/static/style.css`, with colors as CSS variables on `:root`, `color-mix(in srgb, …)`, light theme only. Breakpoints: 900px (the lists sidebar moves above the tasks) and 520px (phones).
+  - Colors: `LIST_COLORS` in `validation.py` names the palette, and each name has a `.color-<name>` class that sets `--tint` (plus `slate` for the Inbox and `accent`). Lists store a color, tasks use their list's, and `tag_color()` in `tasks.py` picks one for a tag from its letters.
+  - Tasks render as `.task-list.view-cards` or `.view-list` from the same HTML, arranged by `grid-template-areas`. The choice is `session["view"]`, set by `POST /view`.
 - Keep comments teaching-oriented but brief. Add or update a test with every behavior change.

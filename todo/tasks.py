@@ -17,6 +17,7 @@ from flask import (
     redirect,
     render_template,
     request,
+    session,
     url_for,
 )
 
@@ -25,9 +26,12 @@ from .quickadd import parse_quick_add
 from .recurrence import describe_repeat, next_due_after
 from .validation import (
     DESCRIPTION_MAX,
+    LIST_COLORS,
     LIST_NAME_MAX,
     REMINDERS,
     TITLE_MAX,
+    next_list_color,
+    validate_list_color,
     validate_list_name,
     validate_task,
 )
@@ -42,6 +46,9 @@ FILTERS = {
     "overdue": "Overdue",
     "completed": "Completed",
 }
+
+# How the tasks are laid out: a grid of cards, or a compact list.
+VIEWS = {"cards": "Cards", "list": "List"}
 
 
 # Every page here needs someone logged in. Checking once for the whole
@@ -217,11 +224,20 @@ def back_to_list():
     return redirect(list_url())
 
 
+def tag_color(name):
+    """A color for a tag, worked out from its letters.
+
+    The same name always gets the same color, so #home looks the same
+    everywhere, without saving a color for every tag.
+    """
+    return LIST_COLORS[sum(ord(letter) for letter in name) % len(LIST_COLORS)]
+
+
 @bp.app_context_processor
 def template_values():
     # Every template can use `keep` to carry the current view in its links,
-    # and list_url() to change part of it.
-    return {"keep": list_args(), "list_url": list_url}
+    # list_url() to change part of it, and tag_color() for tag chips.
+    return {"keep": list_args(), "list_url": list_url, "tag_color": tag_color}
 
 
 @bp.app_errorhandler(400)
@@ -280,16 +296,19 @@ def render_list(quick_text="", quick_error=None):
         ]
 
     counts = {key: sum(1 for t in tasks if matches(t, key, now)) for key in FILTERS}
-    list_names = {l["id"]: l["name"] for l in lists}
-    shown = [
-        dict(
-            t,
-            badge=due_badge(t, now),
-            repeat_text=describe_repeat(t["repeat"]) if t["repeat"] else None,
-            list_name=list_names.get(t["list_id"]),
-        )
-        for t in tasks if matches(t, status, now)
-    ]
+    lists_by_id = {l["id"]: l for l in lists}
+    shown = []
+    for t in tasks:
+        if matches(t, status, now):
+            in_list = lists_by_id.get(t["list_id"])
+            shown.append(dict(
+                t,
+                badge=due_badge(t, now),
+                repeat_text=describe_repeat(t["repeat"]) if t["repeat"] else None,
+                list_name=in_list["name"] if in_list else None,
+                # Each card takes its list's color. Inbox tasks are gray.
+                color=in_list["color"] if in_list else "slate",
+            ))
 
     if current_list:
         heading = current_list["name"]
@@ -302,9 +321,26 @@ def render_list(quick_text="", quick_error=None):
         "index.html", tasks=shown, counts=counts, filters=FILTERS, status=status, q=q,
         tag=tag, lists=lists, current_list=current_list, shown_list=args.get("list"),
         heading=heading, quick_text=quick_text, quick_error=quick_error,
-        list_name_max=LIST_NAME_MAX,
+        list_name_max=LIST_NAME_MAX, list_colors=LIST_COLORS,
+        # A new list gets the next color in turn, so lists look different
+        # even if nobody picks one.
+        next_color=next_list_color(len(lists)),
+        today_text=f"{now:%A}, {now:%B} {now.day}",  # e.g. "Monday, October 19"
+        views=VIEWS, view=session.get("view", "cards"),
     )
     return html, 400 if quick_error else 200
+
+
+@bp.post("/view")
+def set_view():
+    """Switch between cards and the compact list.
+
+    The choice is kept in the session, so it lasts until you log out.
+    """
+    view = request.form.get("view")
+    if view in VIEWS:
+        session["view"] = view
+    return back_to_list()
 
 
 # ---------- Create ----------
@@ -475,11 +511,14 @@ def render_form(form, errors, task):
 @bp.post("/lists/new")
 def create_list():
     name, error = validate_list_name(request.form)
+    color, color_error = validate_list_color(request.form, default=next_list_color(len(user_lists())))
+    error = error or color_error
     if error is None:
         db = get_db()
         try:
             cursor = db.execute(
-                "INSERT INTO lists (user_id, name) VALUES (?, ?)", (g.user["id"], name)
+                "INSERT INTO lists (user_id, name, color) VALUES (?, ?, ?)",
+                (g.user["id"], name, color),
             )
             db.commit()
         except sqlite3.IntegrityError:
@@ -489,6 +528,20 @@ def create_list():
             flash(f"Made the list “{name}”.")
             return redirect(url_for("tasks.index", list=cursor.lastrowid))
     flash(error, "error")
+    return back_to_list()
+
+
+@bp.post("/lists/<int:list_id>/color")
+def change_list_color(list_id):
+    found = get_list_or_404(list_id)
+    color, error = validate_list_color(request.form)
+    if error:
+        flash(error, "error")
+    else:
+        db = get_db()
+        db.execute("UPDATE lists SET color = ? WHERE id = ?", (color, list_id))
+        db.commit()
+        flash(f"“{found['name']}” is {color} now.")
     return back_to_list()
 
 

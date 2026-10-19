@@ -17,6 +17,8 @@ TAG_LENGTH_MAX = 30
 TAG_FORMAT = re.compile(rf"[\w-]{{1,{TAG_LENGTH_MAX}}}")
 TAGS_MAX = 10
 LIST_NAME_MAX = 40
+# The colors a list can have. style.css has a .color-<name> class for each.
+LIST_COLORS = ["blue", "violet", "pink", "red", "orange", "amber", "green", "teal"]
 
 # The reminder menu: minutes before the due time -> label.
 REMINDERS = {
@@ -184,3 +186,19 @@ def validate_list_name(form):
     if len(name) > LIST_NAME_MAX:
         return name, f"List names must be {LIST_NAME_MAX} characters or fewer."
     return name, None
+
+
+def validate_list_color(form, default=None):
+    """Return (color, error) for a list's color, picked from LIST_COLORS.
+
+    If no color was sent, `default` is used when there is one.
+    """
+    color = form.get("color", "") or default
+    if color not in LIST_COLORS:
+        return None, "Pick one of the colors."
+    return color, None
+
+
+def next_list_color(list_count):
+    """The color a new list gets unless another is picked: each in turn."""
+    return LIST_COLORS[list_count % len(LIST_COLORS)]
