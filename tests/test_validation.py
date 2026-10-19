@@ -8,6 +8,7 @@ from todo.validation import (
     PASSWORD_MIN,
     TITLE_MAX,
     USERNAME_MAX,
+    validate_list_name,
     validate_registration,
     validate_task,
 )
@@ -20,7 +21,10 @@ def test_valid_task_is_cleaned():
         {"title": "  Buy milk  ", "description": " 2 liters ", "due_date": "2026-10-20"}, TODAY
     )
     assert errors == {}
-    assert data == {"title": "Buy milk", "description": "2 liters", "due_date": "2026-10-20"}
+    assert data == {
+        "title": "Buy milk", "description": "2 liters", "due_date": "2026-10-20",
+        "due_time": None, "repeat": None, "remind_before": None, "tags": [], "list_id": None,
+    }
 
 
 def test_only_title_is_required():
@@ -137,3 +141,85 @@ def test_password_minimum_length():
 def test_passwords_must_match():
     _, errors = validate_registration(signup(password="secret123", confirm="secret124"))
     assert errors == {"confirm": "The passwords don't match."}
+
+
+# ---------- Time, repeat, reminder, tags and list ----------
+
+def full(**fields):
+    """A valid task form, with some fields changed."""
+    return {"title": "ok", "due_date": "2026-10-20", **fields}
+
+
+def test_all_new_fields_are_cleaned():
+    form = full(due_time="17:30", repeat=" Every 2nd Monday ", remind_before="10",
+                tags="#Home, errands  home", list_id="3")
+    data, errors = validate_task(form, TODAY)
+    assert errors == {}
+    assert data["due_time"] == "17:30"
+    assert data["repeat"] == "nth:2:0"
+    assert data["remind_before"] == 10
+    assert data["tags"] == ["home", "errands"]  # lowercase, no #, no repeats
+    assert data["list_id"] == 3
+
+
+@pytest.mark.parametrize("bad", ["5pm", "24:00", "7:30", "17:60"])
+def test_time_must_be_hh_mm(bad):
+    _, errors = validate_task(full(due_time=bad), TODAY)
+    assert errors["due_time"] == "Enter the time as HH:MM, like 17:30."
+
+
+def test_time_needs_a_date():
+    _, errors = validate_task({"title": "ok", "due_time": "09:00"}, TODAY)
+    assert errors == {"due_time": "Add a due date for this time."}
+
+
+def test_unknown_repeat_is_rejected():
+    _, errors = validate_task(full(repeat="whenever"), TODAY)
+    assert "every 2nd Monday" in errors["repeat"]
+
+
+def test_repeat_without_date_starts_on_the_first_matching_day():
+    # TODAY is a Monday, so "every Friday" starts on Friday the 23rd.
+    data, errors = validate_task({"title": "ok", "repeat": "every friday"}, TODAY)
+    assert errors == {}
+    assert data["due_date"] == "2026-10-23"
+
+
+@pytest.mark.parametrize("remind, message", [
+    ("15", "Choose a reminder from the list."),
+    ("soon", "Choose a reminder from the list."),
+    ("0", "Set a due time to get a reminder."),
+])
+def test_bad_reminders(remind, message):
+    _, errors = validate_task(full(remind_before=remind), TODAY)
+    assert errors["remind_before"] == message
+
+
+def test_reminder_at_the_due_time_is_zero_minutes():
+    data, errors = validate_task(full(due_time="08:00", remind_before="0"), TODAY)
+    assert errors == {}
+    assert data["remind_before"] == 0
+
+
+def test_bad_tags():
+    _, errors = validate_task(full(tags="ok no!pe"), TODAY)
+    assert "Tags can use letters" in errors["tags"]
+
+    _, errors = validate_task(full(tags=" ".join(f"t{n}" for n in range(11))), TODAY)
+    assert errors["tags"] == "Use 10 tags or fewer."
+
+
+def test_list_id_must_be_a_number():
+    _, errors = validate_task(full(list_id="work"), TODAY)
+    assert errors["list_id"] == "Choose a list from the menu."
+
+
+# ---------- List names ----------
+
+def test_list_name_is_tidied():
+    assert validate_list_name({"name": "  Home   stuff "}) == ("Home stuff", None)
+
+
+def test_bad_list_names():
+    assert validate_list_name({"name": "   "})[1] == "Give the list a name."
+    assert "40 characters" in validate_list_name({"name": "x" * 41})[1]

@@ -83,19 +83,35 @@ def add(app):
 
     This skips validation, so tests can create tasks that are already
     overdue or completed. Tasks belong to alice (user 1) unless user_id says
-    otherwise.
+    otherwise. Other columns can be given too, like due_time="17:00".
     """
-    def _add(title, due_date=None, completed=False, description="", user_id=1):
+    def _add(title, due_date=None, completed=False, description="", user_id=1, **columns):
+        columns.update(user_id=user_id, title=title, description=description,
+                       due_date=due_date, completed=int(completed))
+        # The column names come from the test code, not from a user, so it's
+        # safe to paste them into the SQL. The values still use ?.
+        names = ", ".join(columns)
+        marks = ", ".join("?" for _ in columns)
         with app.app_context():
             db = get_db()
-            cursor = db.execute(
-                "INSERT INTO tasks (user_id, title, description, due_date, completed)"
-                " VALUES (?, ?, ?, ?, ?)",
-                (user_id, title, description, due_date, int(completed)),
-            )
+            cursor = db.execute(f"INSERT INTO tasks ({names}) VALUES ({marks})", list(columns.values()))
             db.commit()
             return cursor.lastrowid
     return _add
+
+
+@pytest.fixture
+def tags_of(app):
+    """The tag names on one task, sorted."""
+    def _tags_of(task_id):
+        with app.app_context():
+            rows = get_db().execute(
+                "SELECT tags.name FROM task_tags JOIN tags ON tags.id = task_tags.tag_id"
+                " WHERE task_tags.task_id = ? ORDER BY tags.name",
+                (task_id,),
+            ).fetchall()
+            return [row["name"] for row in rows]
+    return _tags_of
 
 
 @pytest.fixture

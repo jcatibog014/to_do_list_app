@@ -39,13 +39,68 @@
     {% if errors.description %}<p class="error" id="description-error">{{ errors.description }}</p>{% endif %}
   </div>
 
-  <div class="field{% if errors.due_date %} has-error{% endif %}">
-    <label for="due_date">Due date <span class="hint">(optional)</span></label>
-    {# New tasks can't be due in the past. When editing, an old date is kept as is. #}
-    <input id="due_date" name="due_date" type="date" value="{{ form.get('due_date') or '' }}"
-           {% if not task %}min="{{ today }}"{% endif %}
-           {% if errors.due_date %}aria-invalid="true" aria-describedby="due_date-error"{% endif %}>
-    {% if errors.due_date %}<p class="error" id="due_date-error">{{ errors.due_date }}</p>{% endif %}
+  <div class="field-row">
+    <div class="field{% if errors.due_date %} has-error{% endif %}">
+      <label for="due_date">Due date <span class="hint">(optional)</span></label>
+      {# New tasks can't be due in the past. When editing, an old date is kept as is. #}
+      <input id="due_date" name="due_date" type="date" value="{{ form.get('due_date') or '' }}"
+             {% if not task %}min="{{ today }}"{% endif %}
+             {% if errors.due_date %}aria-invalid="true" aria-describedby="due_date-error"{% endif %}>
+      {% if errors.due_date %}<p class="error" id="due_date-error">{{ errors.due_date }}</p>{% endif %}
+    </div>
+
+    <div class="field{% if errors.due_time %} has-error{% endif %}">
+      <label for="due_time">Time <span class="hint">(optional)</span></label>
+      <input id="due_time" name="due_time" type="time" value="{{ form.get('due_time') or '' }}"
+             {% if errors.due_time %}aria-invalid="true" aria-describedby="due_time-error"{% endif %}>
+      {% if errors.due_time %}<p class="error" id="due_time-error">{{ errors.due_time }}</p>{% endif %}
+    </div>
+  </div>
+
+  <div class="field-row">
+    <div class="field{% if errors.repeat %} has-error{% endif %}">
+      <label for="repeat">Repeat <span class="hint">(optional)</span></label>
+      {# Typed in words and read by recurrence.parse_repeat(). #}
+      <input id="repeat" name="repeat" type="text" value="{{ form.get('repeat') or '' }}"
+             placeholder="e.g. every week, every 2nd Monday"
+             {% if errors.repeat %}aria-invalid="true" aria-describedby="repeat-error"{% endif %}>
+      {% if errors.repeat %}<p class="error" id="repeat-error">{{ errors.repeat }}</p>{% endif %}
+    </div>
+
+    <div class="field{% if errors.remind_before %} has-error{% endif %}">
+      <label for="remind_before">Reminder</label>
+      <select id="remind_before" name="remind_before"
+              {% if errors.remind_before %}aria-invalid="true" aria-describedby="remind_before-error"{% endif %}>
+        <option value="">No reminder</option>
+        {% for minutes, label in reminders.items() %}
+          {# Form values are text, so compare as text. #}
+          <option value="{{ minutes }}" {% if form.get('remind_before')|string == minutes|string %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+      {% if errors.remind_before %}<p class="error" id="remind_before-error">{{ errors.remind_before }}</p>{% endif %}
+    </div>
+  </div>
+
+  <div class="field-row">
+    <div class="field{% if errors.list_id %} has-error{% endif %}">
+      <label for="list_id">List</label>
+      <select id="list_id" name="list_id"
+              {% if errors.list_id %}aria-invalid="true" aria-describedby="list_id-error"{% endif %}>
+        <option value="">Inbox</option>
+        {% for item in lists %}
+          <option value="{{ item.id }}" {% if form.get('list_id')|string == item.id|string %}selected{% endif %}>{{ item.name }}</option>
+        {% endfor %}
+      </select>
+      {% if errors.list_id %}<p class="error" id="list_id-error">{{ errors.list_id }}</p>{% endif %}
+    </div>
+
+    <div class="field{% if errors.tags %} has-error{% endif %}">
+      <label for="tags">Tags <span class="hint">(optional)</span></label>
+      <input id="tags" name="tags" type="text" value="{{ form.get('tags') or '' }}"
+             placeholder="e.g. home, errands"
+             {% if errors.tags %}aria-invalid="true" aria-describedby="tags-error"{% endif %}>
+      {% if errors.tags %}<p class="error" id="tags-error">{{ errors.tags }}</p>{% endif %}
+    </div>
   </div>
 
   <div class="form-actions">

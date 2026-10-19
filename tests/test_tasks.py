@@ -137,7 +137,7 @@ def mixed_tasks(add):
 @pytest.mark.parametrize("status, expected", [
     ("all", {"Alpha", "Bravo", "Charlie", "Delta"}),
     ("active", {"Alpha", "Bravo", "Charlie"}),
-    ("today", {"Bravo"}),
+    ("today", {"Bravo", "Charlie"}),  # Today shows late tasks too
     ("overdue", {"Charlie"}),  # Delta is past due too, but it's done
     ("completed", {"Delta"}),
     ("nonsense", {"Alpha", "Bravo", "Charlie", "Delta"}),  # unknown filter = all

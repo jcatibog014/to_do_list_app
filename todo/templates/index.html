@@ -1,30 +1,82 @@
 {% extends "base.html" %}
 
+{% block title %}{% if heading != 'My tasks' %}{{ heading }} · {% endif %}{% endblock %}
+
 {% block content %}
 <div class="page-head">
-  <h1>My tasks</h1>
-  <a class="btn btn-primary" href="{{ url_for('tasks.create', **keep) }}">+ New task</a>
+  <h1>{{ heading }}</h1>
+  <a class="btn" href="{{ url_for('tasks.create', **keep) }}">+ Task with details</a>
 </div>
 
+{# Quick add: one line, no form to fill in. quickadd.py reads the date,
+   time, repeat and #tags out of the text. #}
+<form class="quick-add{% if quick_error %} has-error{% endif %}" method="post"
+      action="{{ url_for('tasks.quick_add', **keep) }}">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <label class="visually-hidden" for="quick">Quick add a task</label>
+  <div class="quick-row">
+    <input id="quick" name="text" type="text" value="{{ quick_text }}" required autocomplete="off"
+           placeholder="Add a task… e.g. pay rent friday 5pm #home"
+           {% if quick_error %}autofocus aria-invalid="true" aria-describedby="quick-error"{% endif %}>
+    <button class="btn btn-primary" type="submit">Add</button>
+  </div>
+  {% if quick_error %}<p class="error" id="quick-error">{{ quick_error }}</p>{% endif %}
+  <p class="hint">Try “tomorrow”, “friday 5pm”, “oct 25”, “in 3 days”, “every 2nd monday” or #tags.</p>
+</form>
+
+{# Lists. Switching list keeps the tab, search and tag you had. #}
+<nav class="lists" aria-label="Lists">
+  <a class="chip{% if not shown_list %} active{% endif %}" href="{{ list_url(list=None) }}"
+     {% if not shown_list %}aria-current="page"{% endif %}>All lists</a>
+  <a class="chip{% if shown_list == 'inbox' %} active{% endif %}" href="{{ list_url(list='inbox') }}"
+     {% if shown_list == 'inbox' %}aria-current="page"{% endif %}>Inbox</a>
+  {% for item in lists %}
+    {% set is_current = current_list and current_list.id == item.id %}
+    <a class="chip{% if is_current %} active{% endif %}" href="{{ list_url(list=item.id) }}"
+       {% if is_current %}aria-current="page"{% endif %}>{{ item.name }}</a>
+  {% endfor %}
+
+  {# <details> opens and closes without any JavaScript. #}
+  <details class="new-list">
+    <summary class="chip">+ New list</summary>
+    <form method="post" action="{{ url_for('tasks.create_list', **keep) }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <label class="visually-hidden" for="list-name">List name</label>
+      <input id="list-name" name="name" type="text" required maxlength="{{ list_name_max }}"
+             placeholder="e.g. Work">
+      <button class="btn btn-small btn-primary" type="submit">Add list</button>
+    </form>
+  </details>
+</nav>
+
 <form class="search" method="get" action="{{ url_for('tasks.index') }}" role="search">
-  {% if status != 'all' %}<input type="hidden" name="status" value="{{ status }}">{% endif %}
+  {# Hidden fields keep the tab, list and tag when you search. #}
+  {% for key, value in keep.items() if key != 'q' %}
+    <input type="hidden" name="{{ key }}" value="{{ value }}">
+  {% endfor %}
   <label class="visually-hidden" for="q">Search tasks</label>
   <input id="q" type="search" name="q" value="{{ q }}" placeholder="Search tasks…">
   <button class="btn" type="submit">Search</button>
   {% if q %}
-    <a class="btn btn-ghost" href="{{ url_for('tasks.index', status=status if status != 'all' else None) }}">Clear</a>
+    <a class="btn btn-ghost" href="{{ list_url(q=None) }}">Clear</a>
   {% endif %}
 </form>
 
 <nav class="tabs" aria-label="Filter tasks">
   {% for key, label in filters.items() %}
     <a class="tab{% if key == status %} active{% endif %}"
-       href="{{ url_for('tasks.index', status=key if key != 'all' else None, q=q or None) }}"
+       href="{{ list_url(status=key if key != 'all' else None) }}"
        {% if key == status %}aria-current="page"{% endif %}>
       {{ label }} <span class="count">{{ counts[key] }}</span>
     </a>
   {% endfor %}
 </nav>
+
+{% if tag %}
+  <p class="filter-note">
+    Showing tasks tagged <strong>#{{ tag }}</strong> · <a href="{{ list_url(tag=None) }}">Show all tags</a>
+  </p>
+{% endif %}
 
 {% if tasks %}
   <ul class="task-list">
@@ -41,7 +93,20 @@
         <div class="task-body">
           <p class="task-title">{{ task.title }}</p>
           {% if task.description %}<p class="task-desc">{{ task.description }}</p>{% endif %}
-          {% if task.badge %}<span class="badge {{ task.badge.kind }}">{{ task.badge.text }}</span>{% endif %}
+          <div class="task-meta">
+            {% if task.badge %}<span class="badge {{ task.badge.kind }}">{{ task.badge.text }}</span>{% endif %}
+            {% if task.remind_before is not none and not task.completed %}
+              <span class="badge" title="Reminder on">🔔<span class="visually-hidden">Reminder on</span></span>
+            {% endif %}
+            {% if task.repeat_text %}<span class="badge">↻ {{ task.repeat_text }}</span>{% endif %}
+            {# The list name only helps when tasks from several lists are shown. #}
+            {% if task.list_name and not shown_list %}
+              <a class="badge badge-list" href="{{ list_url(list=task.list_id) }}">{{ task.list_name }}</a>
+            {% endif %}
+            {% for name in task.tags %}
+              <a class="badge tag" href="{{ list_url(tag=name) }}">#{{ name }}</a>
+            {% endfor %}
+          </div>
         </div>
 
         <div class="task-actions">
@@ -57,9 +122,21 @@
   </ul>
 {% elif q %}
   <p class="empty">No tasks match “{{ q }}”.</p>
+{% elif tag %}
+  <p class="empty">No tasks tagged #{{ tag }} here.</p>
 {% elif counts['all'] == 0 %}
-  <p class="empty">No tasks yet. <a href="{{ url_for('tasks.create') }}">Add your first task</a>.</p>
+  <p class="empty">No tasks yet. Type one in the box above, like “call mom tomorrow 5pm”.</p>
+{% elif status == 'today' %}
+  <p class="empty">Nothing due today. 🎉</p>
 {% else %}
   <p class="empty">Nothing here. 🎉</p>
+{% endif %}
+
+{% if current_list %}
+  <form class="list-tools" method="post" action="{{ url_for('tasks.delete_list', list_id=current_list.id) }}"
+        onsubmit="return confirm('Delete this list? Its tasks will move to the Inbox.');">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <button class="btn btn-small btn-danger" type="submit">Delete this list</button>
+  </form>
 {% endif %}
 {% endblock %}
