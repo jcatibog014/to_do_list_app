@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="page-head">
+  <h1>My tasks</h1>
+  <a class="btn btn-primary" href="{{ url_for('tasks.create', **keep) }}">+ New task</a>
+</div>
+
+<form class="search" method="get" action="{{ url_for('tasks.index') }}" role="search">
+  {% if status != 'all' %}<input type="hidden" name="status" value="{{ status }}">{% endif %}
+  <label class="visually-hidden" for="q">Search tasks</label>
+  <input id="q" type="search" name="q" value="{{ q }}" placeholder="Search tasks…">
+  <button class="btn" type="submit">Search</button>
+  {% if q %}
+    <a class="btn btn-ghost" href="{{ url_for('tasks.index', status=status if status != 'all' else None) }}">Clear</a>
+  {% endif %}
+</form>
+
+<nav class="tabs" aria-label="Filter tasks">
+  {% for key, label in filters.items() %}
+    <a class="tab{% if key == status %} active{% endif %}"
+       href="{{ url_for('tasks.index', status=key if key != 'all' else None, q=q or None) }}"
+       {% if key == status %}aria-current="page"{% endif %}>
+      {{ label }} <span class="count">{{ counts[key] }}</span>
+    </a>
+  {% endfor %}
+</nav>
+
+{% if tasks %}
+  <ul class="task-list">
+    {% for task in tasks %}
+      <li class="task{% if task.completed %} done{% endif %}">
+        <form method="post" action="{{ url_for('tasks.toggle', task_id=task.id, **keep) }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button class="check" type="submit"
+                  aria-label="{{ 'Mark as not done' if task.completed else 'Mark as done' }}: {{ task.title }}">
+            {% if task.completed %}✓{% endif %}
+          </button>
+        </form>
+
+        <div class="task-body">
+          <p class="task-title">{{ task.title }}</p>
+          {% if task.description %}<p class="task-desc">{{ task.description }}</p>{% endif %}
+          {% if task.badge %}<span class="badge {{ task.badge.kind }}">{{ task.badge.text }}</span>{% endif %}
+        </div>
+
+        <div class="task-actions">
+          <a class="btn btn-small" href="{{ url_for('tasks.edit', task_id=task.id, **keep) }}">Edit</a>
+          <form method="post" action="{{ url_for('tasks.delete', task_id=task.id, **keep) }}"
+                onsubmit="return confirm('Delete this task? This can’t be undone.');">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button class="btn btn-small btn-danger" type="submit">Delete</button>
+          </form>
+        </div>
+      </li>
+    {% endfor %}
+  </ul>
+{% elif q %}
+  <p class="empty">No tasks match “{{ q }}”.</p>
+{% elif counts['all'] == 0 %}
+  <p class="empty">No tasks yet. <a href="{{ url_for('tasks.create') }}">Add your first task</a>.</p>
+{% else %}
+  <p class="empty">Nothing here. 🎉</p>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% set heading = 'Edit task' if task else 'New task' %}
+
+{% block title %}{{ heading }} · {% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <h1>{{ heading }}</h1>
+</div>
+
+{% if errors %}
+  <p class="flash flash-error" role="alert">
+    Please fix {{ 'the error' if errors|length == 1 else 'the ' ~ errors|length ~ ' errors' }} below.
+  </p>
+{% endif %}
+
+{#
+  The browser checks required, maxlength and type="date" before sending,
+  but anyone can skip those checks, so validation.py checks everything
+  again on the server. To see the server's messages, add `novalidate`
+  to the <form> tag and submit bad values.
+#}
+<form class="card" method="post">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+  <div class="field{% if errors.title %} has-error{% endif %}">
+    <label for="title">Title</label>
+    <input id="title" name="title" type="text" value="{{ form.get('title', '') }}"
+           required maxlength="{{ title_max }}" autofocus
+           {% if errors.title %}aria-invalid="true" aria-describedby="title-error"{% endif %}>
+    {% if errors.title %}<p class="error" id="title-error">{{ errors.title }}</p>{% endif %}
+  </div>
+
+  <div class="field{% if errors.description %} has-error{% endif %}">
+    <label for="description">Description <span class="hint">(optional)</span></label>
+    <textarea id="description" name="description" rows="4" maxlength="{{ description_max }}"
+              {% if errors.description %}aria-invalid="true" aria-describedby="description-error"{% endif %}
+    >{{ form.get('description', '') }}</textarea>
+    {% if errors.description %}<p class="error" id="description-error">{{ errors.description }}</p>{% endif %}
+  </div>
+
+  <div class="field{% if errors.due_date %} has-error{% endif %}">
+    <label for="due_date">Due date <span class="hint">(optional)</span></label>
+    {# New tasks can't be due in the past. When editing, an old date is kept as is. #}
+    <input id="due_date" name="due_date" type="date" value="{{ form.get('due_date') or '' }}"
+           {% if not task %}min="{{ today }}"{% endif %}
+           {% if errors.due_date %}aria-invalid="true" aria-describedby="due_date-error"{% endif %}>
+    {% if errors.due_date %}<p class="error" id="due_date-error">{{ errors.due_date }}</p>{% endif %}
+  </div>
+
+  <div class="form-actions">
+    <button class="btn btn-primary" type="submit">{{ 'Save changes' if task else 'Add task' }}</button>
+    <a class="btn btn-ghost" href="{{ url_for('tasks.index', **keep) }}">Cancel</a>
+  </div>
+</form>
+{% endblock %}
