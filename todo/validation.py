@@ -1,4 +1,4 @@
-"""Checking what the user typed into the task form.
+"""Checking what the user typed into the task and sign-up forms.
 
 validate_task() is a plain function: form data goes in, and clean data plus
 error messages come out. It doesn't use Flask or the database, which makes
@@ -10,6 +10,11 @@ from datetime import date
 TITLE_MAX = 100
 DESCRIPTION_MAX = 500
 DATE_FORMAT = re.compile(r"[0-9]{4}-[0-9]{2}-[0-9]{2}")
+
+USERNAME_MIN = 3
+USERNAME_MAX = 30
+USERNAME_FORMAT = re.compile(rf"[A-Za-z0-9_]{{{USERNAME_MIN},{USERNAME_MAX}}}")
+PASSWORD_MIN = 8
 
 
 def validate_task(form, today, existing_due_date=None):
@@ -59,3 +64,31 @@ def validate_task(form, today, existing_due_date=None):
         "due_date": due_date.isoformat() if due_date else None,
     }
     return data, errors
+
+
+def validate_registration(form):
+    """Return (data, errors) for the sign-up form, like validate_task().
+
+    Whether the username is already taken needs the database, so auth.py
+    checks that part.
+    """
+    errors = {}
+
+    username = form.get("username", "").strip()
+    # Passwords are not trimmed: a space can be part of a password.
+    password = form.get("password", "")
+    confirm = form.get("confirm", "")
+
+    if not username:
+        errors["username"] = "Username is required."
+    elif not USERNAME_FORMAT.fullmatch(username):
+        errors["username"] = (
+            f"Use {USERNAME_MIN} to {USERNAME_MAX} letters, numbers or underscores (_)."
+        )
+
+    if len(password) < PASSWORD_MIN:
+        errors["password"] = f"Password must be at least {PASSWORD_MIN} characters."
+    elif password != confirm:
+        errors["confirm"] = "The passwords don't match."
+
+    return {"username": username, "password": password}, errors

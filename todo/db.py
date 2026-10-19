@@ -29,15 +29,30 @@ def init_db():
     db = get_db()
     with current_app.open_resource("schema.sql") as f:
         db.executescript(f.read().decode("utf8"))
+    add_user_id_column(db)
+
+
+def add_user_id_column(db):
+    """Upgrade a database made before accounts existed.
+
+    CREATE TABLE IF NOT EXISTS skips a tasks table that is already there,
+    so an old table never gets the new user_id column. Add it by hand.
+    Old tasks get NULL there, so no account sees them.
+    """
+    columns = [row["name"] for row in db.execute("PRAGMA table_info(tasks)")]
+    if "user_id" not in columns:
+        db.execute("ALTER TABLE tasks ADD COLUMN user_id INTEGER REFERENCES users (id)")
+        db.commit()
 
 
 @click.command("init-db")
-@click.option("--reset", is_flag=True, help="Delete every task and start with an empty table.")
+@click.option("--reset", is_flag=True, help="Delete every task and account and start empty.")
 def init_db_command(reset):
     """Create the database (flask --app todo init-db [--reset])."""
     if reset:
-        click.confirm("Delete ALL tasks?", abort=True)
+        click.confirm("Delete ALL tasks and accounts?", abort=True)
         get_db().execute("DROP TABLE IF EXISTS tasks")
+        get_db().execute("DROP TABLE IF EXISTS users")
     init_db()
     click.echo("Database ready.")
 

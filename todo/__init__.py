@@ -27,9 +27,12 @@ def create_app(test_config=None):
 
     os.makedirs(app.instance_path, exist_ok=True)
 
-    from . import csrf, db, tasks
+    from . import auth, csrf, db, tasks
 
     db.init_app(app)
+    # auth goes before csrf, so g.user is already known if the CSRF check
+    # refuses a request and the error page shows the header.
+    app.register_blueprint(auth.bp)
     csrf.init_app(app)
     app.register_blueprint(tasks.bp)
     return app

@@ -4,6 +4,7 @@ A to-do list web app built with **Python**, **Flask** and **SQLite**, made to pr
 
 ## Features
 
+- **Accounts**: sign up, log in and log out. Each person sees and changes only their own tasks.
 - **Create** tasks with a title, an optional description and an optional due date.
 - **Edit** a task.
 - **Complete** a task, or mark it as not done again.
@@ -30,7 +31,9 @@ Python 3.13 is installed at `%LOCALAPPDATA%\Programs\Python\Python313` but isn't
 
 Then open http://127.0.0.1:5000. The database (`instance/todo.sqlite`) is created automatically on first run.
 
-To delete every task and start fresh, run `.venv\Scripts\flask --app todo init-db --reset`.
+Open **Sign up** to create an account. To delete every task and account and start fresh, run `.venv\Scripts\flask --app todo init-db --reset`.
+
+Tasks made before accounts were added have no owner, so they no longer show up. The app adds the `user_id` column to an old database automatically when it starts.
 
 ## Test
 
@@ -43,10 +46,11 @@ To delete every task and start fresh, run `.venv\Scripts\flask --app todo init-d
 | File | Topic |
 |---|---|
 | `todo/__init__.py` | The app factory: building the Flask app and its settings |
-| `todo/schema.sql` | Designing a table: column types, `NOT NULL`, defaults |
+| `todo/schema.sql` | Designing tables: column types, `NOT NULL`, defaults, `UNIQUE`, and linking a task to its user |
 | `todo/db.py` | Opening and closing a database connection per request; a custom `flask` command |
 | `todo/tasks.py` | **CRUD**: `INSERT`, `SELECT`, `UPDATE` and `DELETE` with safe `?` placeholders. **Logic**: filtering, counting, sorting and due-date labels. Post/Redirect/Get |
-| `todo/validation.py` | **Validation**: trimming input, required fields, length limits, date parsing, and rules that depend on other data |
+| `todo/validation.py` | **Validation**: trimming input, required fields, length limits, date parsing, regular expressions, and rules that depend on other data |
+| `todo/auth.py` | **Logins**: password hashing, the session cookie, `g.user`, and why logout is a POST |
 | `todo/csrf.py` | Why every POST form carries a hidden token |
 | `todo/templates/` | **Forms** with Jinja: showing errors per field, keeping typed values, template inheritance |
 | `tests/` | Testing with pytest: plain function tests and fake web requests |

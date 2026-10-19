@@ -11,6 +11,7 @@ from flask import (
     abort,
     current_app,
     flash,
+    g,
     redirect,
     render_template,
     request,
@@ -32,6 +33,14 @@ FILTERS = {
 }
 
 
+# Every page here needs someone logged in. Checking once for the whole
+# blueprint means a new route can't forget the check.
+@bp.before_request
+def require_login():
+    if g.user is None:
+        return redirect(url_for("auth.login"))
+
+
 # ---------- Helpers ----------
 
 def today():
@@ -39,7 +48,11 @@ def today():
 
 
 def get_task_or_404(task_id):
-    task = get_db().execute("SELECT * FROM tasks WHERE id = ?", (task_id,)).fetchone()
+    # "AND user_id = ?" means someone else's task is "not found" too, so
+    # nobody can view or change it by typing its id into the URL.
+    task = get_db().execute(
+        "SELECT * FROM tasks WHERE id = ? AND user_id = ?", (task_id, g.user["id"])
+    ).fetchone()
     if task is None:
         abort(404, f"Task {task_id} doesn't exist. It may have been deleted.")
     return task
@@ -126,11 +139,12 @@ def index():
     q = request.args.get("q", "").strip()
     now = today()
 
-    # One query loads every task, already in display order: unfinished
+    # One query loads the user's tasks, already in display order: unfinished
     # first, then by due date (tasks without one last), then newest first.
     rows = get_db().execute(
-        "SELECT * FROM tasks"
-        " ORDER BY completed, due_date IS NULL, due_date, created_at DESC, id DESC"
+        "SELECT * FROM tasks WHERE user_id = ?"
+        " ORDER BY completed, due_date IS NULL, due_date, created_at DESC, id DESC",
+        (g.user["id"],),
     ).fetchall()
 
     # Search first, so the counts on the tabs match the search.
@@ -161,8 +175,8 @@ def create():
         if not errors:
             db = get_db()
             db.execute(
-                "INSERT INTO tasks (title, description, due_date) VALUES (?, ?, ?)",
-                (data["title"], data["description"], data["due_date"]),
+                "INSERT INTO tasks (user_id, title, description, due_date) VALUES (?, ?, ?, ?)",
+                (g.user["id"], data["title"], data["description"], data["due_date"]),
             )
             db.commit()
             flash(f"Added “{data['title']}”.")

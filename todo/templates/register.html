@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block title %}Create an account · {% endblock %}
+
+{% block content %}
+<div class="auth">
+  <div class="page-head">
+    <h1>Create an account</h1>
+  </div>
+
+  {% if errors %}
+    <p class="flash flash-error" role="alert">
+      Please fix {{ 'the error' if errors|length == 1 else 'the ' ~ errors|length ~ ' errors' }} below.
+    </p>
+  {% endif %}
+
+  <form class="card" method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <div class="field{% if errors.username %} has-error{% endif %}">
+      <label for="username">Username</label>
+      <input id="username" name="username" type="text" value="{{ form.get('username', '') }}"
+             required maxlength="{{ username_max }}" autocomplete="username" autofocus
+             {% if errors.username %}aria-invalid="true" aria-describedby="username-error"{% endif %}>
+      {% if errors.username %}<p class="error" id="username-error">{{ errors.username }}</p>{% endif %}
+    </div>
+
+    {# The password boxes always start empty: the server never sends a password back. #}
+    <div class="field{% if errors.password %} has-error{% endif %}">
+      <label for="password">Password <span class="hint">(at least {{ password_min }} characters)</span></label>
+      <input id="password" name="password" type="password"
+             required minlength="{{ password_min }}" autocomplete="new-password"
+             {% if errors.password %}aria-invalid="true" aria-describedby="password-error"{% endif %}>
+      {% if errors.password %}<p class="error" id="password-error">{{ errors.password }}</p>{% endif %}
+    </div>
+
+    <div class="field{% if errors.confirm %} has-error{% endif %}">
+      <label for="confirm">Type the password again</label>
+      <input id="confirm" name="confirm" type="password" required autocomplete="new-password"
+             {% if errors.confirm %}aria-invalid="true" aria-describedby="confirm-error"{% endif %}>
+      {% if errors.confirm %}<p class="error" id="confirm-error">{{ errors.confirm }}</p>{% endif %}
+    </div>
+
+    <div class="form-actions">
+      <button class="btn btn-primary" type="submit">Create account</button>
+    </div>
+  </form>
+
+  <p class="switch">Already have an account? <a href="{{ url_for('auth.login') }}">Log in</a>.</p>
+</div>
+{% endblock %}
