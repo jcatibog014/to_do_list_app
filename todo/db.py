@@ -52,6 +52,7 @@ NEW_COLUMNS = {
         "appearance": "TEXT NOT NULL DEFAULT 'system'",
         "display_name": "TEXT",
         "avatar": "TEXT",
+        "is_demo": "INTEGER NOT NULL DEFAULT 0",
     },
 }
 

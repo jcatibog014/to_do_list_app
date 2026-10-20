@@ -78,6 +78,10 @@ def update_info():
 
 @bp.post("/profile/password")
 def change_password():
+    if g.user["is_demo"]:
+        # Demo accounts are throwaway (demo.py), so they never get a password.
+        notify("Demo accounts can't have a password. Sign up to make your own account.", "error")
+        return redirect(url_for("profile.index"))
     new_password, errors = validate_password_change(request.form)
     # Asking for the current password stops someone who finds your phone
     # unlocked from locking you out of your own account.

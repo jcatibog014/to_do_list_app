@@ -72,6 +72,11 @@
 
   <section class="card" id="password">
     <h2>Password</h2>
+    {% if g.user.is_demo %}
+      {# A demo account's password is random and nobody knows it, so there's nothing to change. #}
+      <p class="hint">Demo accounts don't have a password, and they're deleted after a day.
+        <a href="{{ url_for('auth.register') }}">Sign up</a> to keep your own tasks.</p>
+    {% else %}
     {# The password boxes always start empty: the server never sends a password back. #}
     <form method="post" action="{{ url_for('profile.change_password') }}">
       {{ ui.csrf() }}
@@ -86,6 +91,7 @@
       </div>
       <button class="btn btn-primary" type="submit">Change Password</button>
     </form>
+    {% endif %}
   </section>
 
   <section class="card" id="theme">
