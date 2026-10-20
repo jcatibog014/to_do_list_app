@@ -46,7 +46,11 @@
     // from installed apps and throw an error here, which is fine.
     if ("Notification" in window && Notification.permission === "granted") {
       try {
-        new Notification("To-Do reminder", { body: `${reminder.title} · ${reminder.when}`, tag: `task-${reminder.id}` });
+        new Notification("Later Gator reminder", {
+          body: `${reminder.title} · ${reminder.when}`,
+          icon: "/static/logo.png",
+          tag: `task-${reminder.id}`,
+        });
       } catch { /* the message on the page is enough */ }
     }
   }

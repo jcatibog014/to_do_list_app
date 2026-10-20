@@ -24,10 +24,10 @@ def test_titles_are_html_escaped(client, add):
 def test_unfinished_tasks_come_first_then_by_due_date(client, add):
     add("Done task", due_date="2026-10-19", completed=True)
     add("No date")
-    add("Later", due_date="2026-12-01")
+    add("Further off", due_date="2026-12-01")
     add("Sooner", due_date="2026-10-20")
     html = client.get("/").get_data(as_text=True)
-    positions = [html.index(t) for t in ["Sooner", "Later", "No date", "Done task"]]
+    positions = [html.index(t) for t in ["Sooner", "Further off", "No date", "Done task"]]
     assert positions == sorted(positions)
 
 

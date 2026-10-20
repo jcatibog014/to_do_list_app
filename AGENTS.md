@@ -4,7 +4,7 @@ This file guides AI coding agents (Claude Code, Codex, Cursor, Copilot and other
 
 ## Overview
 
-A to-do list web app in Python (Flask + SQLite, using the stdlib `sqlite3` with no ORM). It is a learning project for CRUD, programming logic, forms and validation. Keep the code readable for a learner: short comments that explain *why*, and no extra libraries such as WTForms or SQLAlchemy unless the owner asks for them.
+Later Gator, a to-do list web app in Python (Flask + SQLite, using the stdlib `sqlite3` with no ORM). It is a learning project for CRUD, programming logic, forms and validation. Keep the code readable for a learner: short comments that explain *why*, and no extra libraries such as WTForms or SQLAlchemy unless the owner asks for them.
 
 Python 3.13 is at `%LOCALAPPDATA%\Programs\Python\Python313\python.exe` and is **not on PATH** (`python` opens the Microsoft Store alias). Use the virtual environment:
 

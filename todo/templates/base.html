@@ -19,14 +19,19 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   {# app.js and focus.js read the CSRF token from here for the forms they send. #}
   <meta name="csrf-token" content="{{ csrf_token() }}">
-  <title>{% block title %}{% endblock %}To-Do List</title>
+  <title>{% block title %}{% endblock %}Later Gator</title>
+  {# The logo is also the icon in the browser tab and on a phone's home screen. #}
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='logo.png') }}">
+  <link rel="apple-touch-icon" href="{{ url_for('static', filename='logo.png') }}">
+  <meta name="theme-color" content="#214d3c">
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body{% if g.user %} class="has-nav"{% endif %}>
   <header class="topbar">
     <div class="wrap">
       <a class="brand" href="{{ url_for('tasks.index') }}">
-        <span class="brand-mark" aria-hidden="true">✓</span> To-Do List
+        <img class="brand-logo" src="{{ url_for('static', filename='logo.png') }}" alt="" width="34" height="34">
+        Later Gator
       </a>
 
       {% if g.user %}

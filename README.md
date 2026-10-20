@@ -1,6 +1,6 @@
 # to_do_list_app
 
-A to-do list web app built with **Python**, **Flask** and **SQLite**, made to practice CRUD, basic programming logic, forms and validation.
+**Later Gator** 🐊 is a to-do list web app built with **Python**, **Flask** and **SQLite**, made to practice CRUD, basic programming logic, forms and validation.
 
 ## Features
 

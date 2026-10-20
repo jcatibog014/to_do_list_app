@@ -1,4 +1,4 @@
-"""To-Do List App.
+"""Later Gator, a to-do list app.
 
 Flask builds the app inside create_app() (the "app factory" pattern).
 Tests call it with their own settings, so each test gets a fresh database.

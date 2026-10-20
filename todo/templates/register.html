@@ -4,6 +4,13 @@
 
 {% block content %}
 <div class="auth">
+  {# The logo and name, big, to welcome people. #}
+  <div class="auth-brand">
+    <img src="{{ url_for('static', filename='logo.png') }}" alt="" width="96" height="96">
+    <p class="auth-name">Later Gator</p>
+    <p class="hint">Get it done now, so you can say “see you later, alligator.” 🐊</p>
+  </div>
+
   <div class="page-head">
     <h1>Create an account</h1>
   </div>

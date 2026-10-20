@@ -153,3 +153,14 @@ def test_old_lists_table_gets_a_color(tmp_path):
     app = create_app({"TESTING": True, "DATABASE": str(path), "TODAY": lambda: TODAY})
 
     assert lists_in_db(app) == [{"name": "Work", "color": "blue"}]
+
+
+# ---------- Name and logo ----------
+
+def test_app_name_and_logo(client, guest):
+    html = guest.get("/login").get_data(as_text=True)
+    assert "<title>Log in · Later Gator</title>" in html
+    assert 'rel="icon" type="image/png" href="/static/logo.png"' in html
+    assert 'class="brand-logo" src="/static/logo.png"' in html
+    assert '<p class="auth-name">Later Gator</p>' in html
+    assert guest.get("/static/logo.png").status_code == 200
