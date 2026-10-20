@@ -160,7 +160,31 @@ def test_old_lists_table_gets_a_color(tmp_path):
 def test_app_name_and_logo(client, guest):
     html = guest.get("/login").get_data(as_text=True)
     assert "<title>Log In · Later Gator</title>" in html
-    assert 'rel="icon" type="image/png" href="/static/logo.png"' in html
-    assert 'class="brand-logo" src="/static/logo.png"' in html
+    assert re.search(r'rel="icon" type="image/png" href="/static/logo\.png\?v=\d+"', html)
+    assert re.search(r'class="brand-logo" src="/static/logo\.png\?v=\d+"', html)
     assert '<p class="auth-name">Later Gator</p>' in html
     assert guest.get("/static/logo.png").status_code == 200
+
+
+# ---------- Gator theme, centered login, fresh static files ----------
+
+def test_static_links_carry_a_version(guest):
+    html = guest.get("/login").get_data(as_text=True)
+    # The number changes whenever the file does, so browsers fetch the new one.
+    assert re.search(r'href="/static/style\.css\?v=\d+"', html)
+    assert re.search(r'src="/static/logo\.png\?v=\d+"', html)
+
+
+def test_login_and_sign_up_use_the_centered_layout(guest):
+    for url in ["/login", "/register"]:
+        html = guest.get(url).get_data(as_text=True)
+        assert '<div class="auth">' in html
+        assert '<div class="auth-brand">' in html
+
+
+def test_gator_is_the_default_theme_and_grape_is_still_there(client, post):
+    html = client.get("/profile").get_data(as_text=True)
+    assert '<span class="theme-name">Gator</span>' in html
+    assert '<span class="theme-name">Grape</span>' in html
+    post("/profile/theme", {"theme": "grape", "appearance": "light"})
+    assert 'data-theme="grape"' in client.get("/").get_data(as_text=True)

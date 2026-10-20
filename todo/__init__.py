@@ -25,6 +25,19 @@ def create_app(test_config=None):
     if test_config:
         app.config.update(test_config)
 
+    @app.url_defaults
+    def add_static_version(endpoint, values):
+        """Add ?v=<when the file last changed> to links to static files.
+
+        Browsers keep a copy of style.css and the scripts, and may go on
+        using an old one after a deploy. A new number after each change
+        makes the link new, so the browser downloads the new file.
+        """
+        if endpoint == "static" and "filename" in values:
+            path = os.path.join(app.static_folder, values["filename"])
+            if os.path.isfile(path):
+                values["v"] = int(os.path.getmtime(path))
+
     os.makedirs(app.instance_path, exist_ok=True)
 
     from . import auth, csrf, db, lists, pages, profile, tasks
