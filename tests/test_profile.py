@@ -156,3 +156,8 @@ def test_streak_unlocks_a_theme(client, post, add, app):
 
 def test_stats_page_points_to_the_theme(client):
     assert 'href="/profile#theme"' in client.get("/stats").get_data(as_text=True)
+
+
+def test_stats_page_uses_the_display_name(client, post):
+    post("/profile", info(display_name="Ali"))
+    assert "<h1>Ali</h1>" in client.get("/stats").get_data(as_text=True)

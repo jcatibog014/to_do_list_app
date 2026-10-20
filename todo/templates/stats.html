@@ -7,7 +7,7 @@
 <div class="page-head">
   <div>
     <p class="eyebrow">Member since {{ member_since }}</p>
-    <h1>{{ g.user.username }}</h1>
+    <h1>{{ g.user.display_name or g.user.username }}</h1>
   </div>
 </div>
 

@@ -1,6 +1,36 @@
-# to_do_list_app
+<p align="center">
+  <img src="todo/static/logo.png" alt="Later Gator logo: a green alligator peeking out of the water, with an orange check mark" width="140">
+</p>
 
-**Later Gator** 🐊 is a to-do list web app built with **Python**, **Flask** and **SQLite**, made to practice CRUD, basic programming logic, forms and validation.
+<h1 align="center">Later Gator</h1>
+
+<p align="center">A colorful to-do list web app built with <b>Python</b>, <b>Flask</b> and <b>SQLite</b>, made to practice CRUD, basic programming logic, forms and validation. 🐊</p>
+
+## Screenshots
+
+The home screen: a greeting with today's progress, list chips, quick add, and a grid of cards colored by list. Cards grow with notes and subtasks, late tasks get a red edge, and high-priority ones a gold glow.
+
+![Home screen with a grid of colorful task cards](docs/screenshots/home.png)
+
+| On a phone | Focus mode: swipe through one task at a time |
+|---|---|
+| <img src="docs/screenshots/phone.png" alt="Home screen on a phone, with two columns of cards and a bottom navigation bar" width="300"> | ![Focus mode showing one task card with Later, Tomorrow and Done buttons](docs/screenshots/focus.png) |
+
+| Board: To do, Doing, Done | Calendar |
+|---|---|
+| ![Board view with three columns of task cards](docs/screenshots/board.png) | ![A month calendar with tasks on their days](docs/screenshots/calendar.png) |
+
+| Dark mode (Ocean theme) | Matcha theme |
+|---|---|
+| ![The home screen in dark mode with the Ocean theme](docs/screenshots/dark.png) | ![The home screen with the green Matcha theme](docs/screenshots/matcha.png) |
+
+| Profile | Stats |
+|---|---|
+| ![Profile page with picture, name, username, password and theme settings](docs/screenshots/profile.png) | ![Stats page with a streak, counts and a 7-day bar chart](docs/screenshots/stats.png) |
+
+| Log in |
+|---|
+| <img src="docs/screenshots/login.png" alt="Log in page with the Later Gator logo" width="600"> |
 
 ## Features
 

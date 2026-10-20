@@ -1090,7 +1090,6 @@ p.flash.flash-error:not(.toast) {
 .stat-label { margin: 4px 0 0; font-size: 0.875rem; font-weight: 600; opacity: 0.85; }
 
 .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; margin-bottom: 16px; }
-.stats-grid > .card { margin: 0; } /* the grid's gap does the spacing here */
 
 .week-chart { display: flex; align-items: flex-end; gap: 10px; height: 150px; }
 .week-bar { display: flex; flex: 1; flex-direction: column; align-items: center; justify-content: flex-end; gap: 4px; height: 100%; }
@@ -1146,6 +1145,9 @@ p.flash.flash-error:not(.toast) {
   box-shadow: var(--shadow);
 }
 .card + .card { margin-top: 16px; }
+/* In the stats grid, the grid's gap does the spacing. This comes after the
+   rule above on purpose: with equal specificity, the later rule wins. */
+.stats-grid > .card { margin: 0; }
 
 .field { margin: 0 0 18px; }
 .field label,
