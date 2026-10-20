@@ -4,15 +4,22 @@ from datetime import date
 import pytest
 
 from todo.validation import (
+    AVATAR_CHOICES,
     DESCRIPTION_MAX,
+    EMOJI_CHOICES,
     LIST_COLORS,
     PASSWORD_MIN,
     TITLE_MAX,
     USERNAME_MAX,
     next_list_color,
+    capitalize_first,
     validate_list_color,
     validate_list_name,
+    validate_password_change,
+    validate_profile,
     validate_registration,
+    validate_settings,
+    validate_subtask,
     validate_task,
 )
 
@@ -27,6 +34,7 @@ def test_valid_task_is_cleaned():
     assert data == {
         "title": "Buy milk", "description": "2 liters", "due_date": "2026-10-20",
         "due_time": None, "repeat": None, "remind_before": None, "tags": [], "list_id": None,
+        "priority": 0, "emoji": None, "subtasks": [],
     }
 
 
@@ -241,3 +249,100 @@ def test_next_list_color_goes_round_the_palette():
     assert next_list_color(0) == LIST_COLORS[0]
     assert next_list_color(1) == LIST_COLORS[1]
     assert next_list_color(len(LIST_COLORS)) == LIST_COLORS[0]
+
+
+# ---------- Emoji, priority, subtasks and settings ----------
+
+def test_emoji_and_priority():
+    data, errors = validate_task({"title": "ok", "emoji": "🛒", "priority": "1"}, TODAY)
+    assert errors == {}
+    assert (data["emoji"], data["priority"]) == ("🛒", 1)
+
+    data, _ = validate_task({"title": "ok"}, TODAY)
+    assert (data["emoji"], data["priority"]) == (None, 0)
+
+
+@pytest.mark.parametrize("bad", ["abc", "<b>", "🛒🛒🛒🛒🛒🛒🛒🛒🛒"])
+def test_bad_emoji(bad):
+    _, errors = validate_task({"title": "ok", "emoji": bad}, TODAY)
+    assert errors["emoji"] == "Pick an emoji from the list."
+
+
+def test_every_offered_emoji_is_valid():
+    for emoji in EMOJI_CHOICES:
+        _, errors = validate_task({"title": "ok", "emoji": emoji}, TODAY)
+        assert errors == {}, emoji
+
+
+def test_subtask_lines():
+    data, errors = validate_task({"title": "ok", "subtasks": " a \n\nb\n"}, TODAY)
+    assert errors == {}
+    assert data["subtasks"] == ["A", "B"]
+
+    _, errors = validate_task({"title": "ok", "subtasks": "x" * 101}, TODAY)
+    assert "100 characters" in errors["subtasks"]
+
+    _, errors = validate_task({"title": "ok", "subtasks": "\n".join("s" for _ in range(21))}, TODAY)
+    assert errors["subtasks"] == "Use 20 subtasks or fewer."
+
+
+def test_validate_subtask():
+    assert validate_subtask({"title": " milk "}) == ("Milk", None)
+    assert validate_subtask({"title": ""})[1] == "Type the subtask first."
+
+
+def test_validate_settings():
+    assert validate_settings({"theme": "ocean", "appearance": "dark"}, best_streak=0) == (
+        {"theme": "ocean", "appearance": "dark"}, {})
+    _, errors = validate_settings({"theme": "matcha", "appearance": "light"}, best_streak=2)
+    assert errors == {"theme": "Matcha unlocks after a 3-day streak."}
+    _, errors = validate_settings({"theme": "matcha", "appearance": "light"}, best_streak=3)
+    assert errors == {}
+    _, errors = validate_settings({"theme": "plaid", "appearance": "neon"}, best_streak=99)
+    assert set(errors) == {"theme", "appearance"}
+
+
+# ---------- Profile ----------
+
+def test_validate_profile():
+    data, errors = validate_profile({"username": " ana ", "display_name": " Ana   Cruz ", "avatar": "🦊"})
+    assert errors == {}
+    assert data == {"username": "ana", "display_name": "Ana Cruz", "avatar": "🦊"}
+
+    data, _ = validate_profile({"username": "ana"})
+    assert (data["display_name"], data["avatar"]) == (None, None)
+
+
+def test_every_offered_avatar_is_valid():
+    for emoji in AVATAR_CHOICES:
+        assert validate_profile({"username": "ana", "avatar": emoji})[1] == {}, emoji
+
+
+def test_validate_password_change():
+    assert validate_password_change({"current_password": "old one!", "new_password": "new one!!",
+                                     "confirm_password": "new one!!"}) == ("new one!!", {})
+    _, errors = validate_password_change({"new_password": "short", "confirm_password": "short"})
+    assert set(errors) == {"current_password", "new_password"}
+
+
+# ---------- Capital letters ----------
+
+@pytest.mark.parametrize("text, expected", [
+    ("buy eggs", "Buy eggs"),
+    ("Buy eggs", "Buy eggs"),
+    ("call mom about the BBQ", "Call mom about the BBQ"),  # only the first letter changes
+    ("iPhone repair", "iPhone repair"),                    # mixed case on purpose stays
+    ("eBay order", "eBay order"),
+    ("#home stuff", "#home stuff"),                        # doesn't start with a letter
+    ("ñandu", "Ñandu"),
+    ("", ""),
+])
+def test_capitalize_first(text, expected):
+    assert capitalize_first(text) == expected
+
+
+def test_titles_and_list_names_are_capitalized():
+    data, _ = validate_task({"title": "pay rent", "subtasks": "find receipt\nsend money"}, TODAY)
+    assert data["title"] == "Pay rent"
+    assert data["subtasks"] == ["Find receipt", "Send money"]
+    assert validate_list_name({"name": "groceries"}) == ("Groceries", None)

@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% import "_macros.html" as ui with context %}
+
+{% block title %}{{ first.strftime('%B %Y') }} · {% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <p class="eyebrow">Calendar</p>
+    <h1>{{ first.strftime('%B %Y') }}</h1>
+  </div>
+  <div class="month-nav">
+    <a class="btn btn-small" href="{{ url_for('pages.calendar', month=prev_month.strftime('%Y-%m')) }}" aria-label="Previous month">‹</a>
+    <a class="btn btn-small" href="{{ url_for('pages.calendar') }}">Today</a>
+    <a class="btn btn-small" href="{{ url_for('pages.calendar', month=next_month.strftime('%Y-%m')) }}" aria-label="Next month">›</a>
+  </div>
+</div>
+
+{# A table suits a calendar: each row is a week and each cell a day. #}
+<table class="calendar">
+  <thead>
+    <tr>{% for name in weekday_names %}<th scope="col">{{ name }}</th>{% endfor %}</tr>
+  </thead>
+  <tbody>
+    {% for week in weeks %}
+      <tr>
+        {% for day in week %}
+          {% set day_tasks = by_day.get(day.isoformat(), []) %}
+          <td class="{% if day.month != first.month %}other-month{% endif %}{% if day == now %} is-today{% endif %}{% if day == selected %} is-selected{% endif %}">
+            <a class="day-link" href="{{ url_for('pages.calendar', month=first.strftime('%Y-%m'), day=day.isoformat()) }}"
+               aria-label="{{ day.strftime('%A, %B') }} {{ day.day }}{% if day_tasks %}, {{ day_tasks|length }} task{{ 's' if day_tasks|length != 1 }}{% endif %}">
+              <span class="day-number">{{ day.day }}</span>
+              {% for task in day_tasks[:3] %}
+                <span class="day-task color-{{ task.color }}{% if task.completed %} done{% endif %}">
+                  {%- if task.emoji %}{{ task.emoji }} {% endif %}{{ task.title|capfirst -}}
+                </span>
+              {% endfor %}
+              {% if day_tasks|length > 3 %}<span class="day-more">+{{ day_tasks|length - 3 }} more</span>{% endif %}
+            </a>
+          </td>
+        {% endfor %}
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+{% if selected %}
+  <section class="day-panel">
+    <h2>{{ selected.strftime('%A, %B') }} {{ selected.day }}</h2>
+    {% if selected_tasks %}
+      <ul class="task-list view-list">
+        {% for task in selected_tasks %}
+          {{ ui.task_card(task, lists, 'calendar') }}
+        {% endfor %}
+      </ul>
+    {% else %}
+      <div class="empty"><p class="empty-icon" aria-hidden="true">🌤️</p><p>Nothing due this day.</p></div>
+    {% endif %}
+  </section>
+{% endif %}
+{% endblock %}

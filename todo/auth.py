@@ -23,6 +23,16 @@ def load_logged_in_user():
         g.user = get_db().execute("SELECT * FROM users WHERE id = ?", (user_id,)).fetchone()
 
 
+def require_login():
+    """Send logged-out visitors to the login page.
+
+    A blueprint runs it before each of its pages with
+    bp.before_request(require_login), so a new page can't forget the check.
+    """
+    if g.user is None:
+        return redirect(url_for("auth.login"))
+
+
 def log_in(user_id):
     # Start a fresh session, so nothing from before logging in carries over.
     session.clear()

@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% import "_macros.html" as ui with context %}
+
+{% block title %}Lists · {% endblock %}
+
+{% macro progress(open_count, done_count) -%}
+  {% set total = open_count + done_count %}
+  <div class="day-bar small" role="progressbar" aria-label="Done"
+       aria-valuemin="0" aria-valuemax="{{ total }}" aria-valuenow="{{ done_count }}">
+    <span style="width: {{ (100 * done_count / total)|round|int if total else 0 }}%"></span>
+  </div>
+{%- endmacro %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <p class="eyebrow">Organize</p>
+    <h1>Lists</h1>
+  </div>
+</div>
+
+<div class="list-grid">
+  <article class="list-card color-slate">
+    <a class="list-card-link" href="{{ url_for('tasks.index', list='inbox') }}">
+      <span class="dot" aria-hidden="true"></span> Inbox
+    </a>
+    <p class="list-counts">{{ inbox.open_count }} open · {{ inbox.done_count }} done</p>
+    {{ progress(inbox.open_count, inbox.done_count) }}
+    <p class="hint">Tasks that aren't in a list.</p>
+  </article>
+
+  {% for item in lists %}
+    <article class="list-card color-{{ item.color }}" id="list-{{ item.id }}">
+      <a class="list-card-link" href="{{ url_for('tasks.index', list=item.id) }}">
+        <span class="dot" aria-hidden="true"></span> {{ item.name|capfirst }}
+      </a>
+      <p class="list-counts">{{ item.open_count }} open · {{ item.done_count }} done</p>
+      {{ progress(item.open_count, item.done_count) }}
+
+      <details class="list-edit">
+        <summary>Edit List</summary>
+        <form class="inline-form" method="post" action="{{ url_for('lists.rename', list_id=item.id) }}">
+          {{ ui.csrf() }}{{ ui.back_fields('lists') }}
+          <label class="visually-hidden" for="rename-{{ item.id }}">New name</label>
+          <input id="rename-{{ item.id }}" name="name" type="text" value="{{ item.name }}" required maxlength="{{ list_name_max }}">
+          <button class="btn btn-small" type="submit">Rename</button>
+        </form>
+        <form class="swatches" method="post" action="{{ url_for('lists.change_color', list_id=item.id) }}">
+          {{ ui.csrf() }}{{ ui.back_fields('lists') }}
+          <span class="hint">Color</span>
+          {% for color in list_colors %}
+            <button class="swatch-button color-{{ color }}{% if color == item.color %} active{% endif %}"
+                    type="submit" name="color" value="{{ color }}"
+                    aria-label="Make {{ item.name }} {{ color }}"{% if color == item.color %} aria-pressed="true"{% endif %}></button>
+          {% endfor %}
+        </form>
+        <form method="post" action="{{ url_for('lists.delete', list_id=item.id) }}"
+              onsubmit="return confirm('Delete this list? Its tasks will move to the Inbox.');">
+          {{ ui.csrf() }}{{ ui.back_fields('lists') }}
+          <button class="btn btn-small btn-ghost btn-danger" type="submit">Delete List</button>
+        </form>
+      </details>
+    </article>
+  {% endfor %}
+
+  <article class="list-card new-list-card">
+    <form method="post" action="{{ url_for('lists.create') }}">
+      {{ ui.csrf() }}{{ ui.back_fields('lists') }}
+      <label class="sheet-title" for="list-name">New List</label>
+      <input id="list-name" name="name" type="text" required maxlength="{{ list_name_max }}" placeholder="e.g. Work">
+      <fieldset class="swatches">
+        <legend class="visually-hidden">Color</legend>
+        {% for color in list_colors %}
+          {# The real radio button is hidden. The span after it is the colored circle you see. #}
+          <label class="swatch color-{{ color }}">
+            <input class="visually-hidden" type="radio" name="color" value="{{ color }}"
+                   {% if color == next_color %}checked{% endif %}>
+            <span aria-hidden="true"></span>
+            <span class="visually-hidden">{{ color|capitalize }}</span>
+          </label>
+        {% endfor %}
+      </fieldset>
+      <button class="btn btn-primary btn-small" type="submit">Add List</button>
+    </form>
+  </article>
+</div>
+{% endblock %}

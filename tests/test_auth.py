@@ -98,7 +98,7 @@ def test_failed_login_gives_one_message_for_both_mistakes(guest, post, username,
 def test_header_shows_who_is_logged_in(client):
     html = client.get("/").get_data(as_text=True)
     assert f'<span class="account-name">{USERNAME}</span>' in html
-    assert "Log out" in html
+    assert "Log Out" in html
 
 
 def test_logout(client, post):

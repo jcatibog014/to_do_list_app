@@ -28,14 +28,14 @@ def test_quick_add_saves_every_part(client, post, fetch, tags_of):
     assert response.status_code == 302
 
     task = fetch(1)
-    assert task["title"] == "pay rent"
+    assert task["title"] == "Pay rent"
     assert (task["due_date"], task["due_time"]) == ("2026-10-23", "17:00")
     assert task["remind_before"] == 0  # a typed time also sets a reminder
     assert task["list_id"] is None
     assert tags_of(1) == ["bills", "home"]
 
     html = client.get("/").get_data(as_text=True)
-    assert "Added “pay rent”. Due Oct 23, 5:00 PM." in html
+    assert "Added “Pay rent”. Due Oct 23, 5:00 PM." in html
 
 
 def test_quick_add_without_a_time_sets_no_reminder(post, fetch):
@@ -88,13 +88,13 @@ def test_today_shows_late_and_due_today_in_time_order(client, add):
     add("Afternoon", due_date="2026-10-19", due_time="15:00")
     add("Morning", due_date="2026-10-19", due_time="08:30")
     add("Any time today", due_date="2026-10-19")
-    add("Tomorrow", due_date="2026-10-20")
+    add("Task-for-the-20th", due_date="2026-10-20")
     add("Done today", due_date="2026-10-19", completed=True)
 
     html = client.get("/?status=today").get_data(as_text=True)
     order = ["Late one", "Morning", "Afternoon", "Any time today"]
     assert [html.index(t) for t in order] == sorted(html.index(t) for t in order)
-    assert "Tomorrow" not in html
+    assert "Task-for-the-20th" not in html
     assert "Done today" not in html
     assert "Due today, 8:30 AM" in html
     assert 'Today <span class="count">4</span>' in html
@@ -193,11 +193,11 @@ def test_tag_filter_and_search(client, post):
     client.get("/")  # shows (and so clears) the "Added …" messages
 
     html = client.get("/?tag=home").get_data(as_text=True)
-    assert "paint fence" in html and "send report" not in html
+    assert "Paint fence" in html and "Send report" not in html
     assert "Showing tasks tagged <strong>#home</strong>" in html
 
     html = client.get("/?q=%23work").get_data(as_text=True)  # %23 is "#"
-    assert "send report" in html and "paint fence" not in html
+    assert "Send report" in html and "Paint fence" not in html
 
 
 def test_tags_are_private(client, post, add, other_user, app):
@@ -209,7 +209,7 @@ def test_tags_are_private(client, post, add, other_user, app):
         db.commit()
     post("/tasks/quick", {"text": "mine #home"})
     html = client.get("/?tag=home").get_data(as_text=True)
-    assert "mine" in html and "Bob" not in html
+    assert "Mine" in html and "Bob" not in html
 
 
 def test_deleting_a_task_removes_its_tag_links(post, app):
@@ -242,7 +242,7 @@ def test_completing_a_repeating_task_makes_the_next_one(client, post, add, fetch
     assert done["completed"] == 1
     assert done["repeat"] is None  # the copy has the rule now
     assert nxt["completed"] == 0
-    assert (nxt["title"], nxt["due_date"], nxt["due_time"]) == ("water plants", "2026-10-22", "08:00")
+    assert (nxt["title"], nxt["due_date"], nxt["due_time"]) == ("Water plants", "2026-10-22", "08:00")
     assert (nxt["repeat"], nxt["remind_before"]) == ("day:3", 0)
     assert tags_of(2) == ["home"]
     assert "Next one: Due Oct 22, 8:00 AM." in client.get("/").get_data(as_text=True)
@@ -265,7 +265,7 @@ def test_late_repeating_task_skips_past_dates(post, add, fetch):
 
 def test_repeat_label_on_the_list(client, add):
     add("Rent", due_date="2026-10-31", repeat="month:1")
-    assert "↻ every month" in client.get("/").get_data(as_text=True)
+    assert "↻ Every month" in client.get("/").get_data(as_text=True)
 
 
 # ---------- Reminders ----------

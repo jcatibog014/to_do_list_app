@@ -1,36 +1,71 @@
+{% import "_macros.html" as ui with context %}
+{# The main pages, for the top bar on big screens and the bottom bar on phones. #}
+{# Each item: the page, its icon, its label, and the pages that light it up
+   (Stats lives under Profile, to keep the bottom bar at 4 tabs). #}
+{% set nav_items = [
+  ('tasks.index', '🏠', 'Today', ['tasks.index', 'tasks.focus']),
+  ('lists.index', '🗂️', 'Lists', ['lists.index']),
+  ('pages.calendar', '📅', 'Calendar', ['pages.calendar']),
+  ('profile.index', '👤', 'Profile', ['profile.index', 'pages.stats']),
+] %}
+{# Which page the Undo button should come back to (see go_back() in tasks.py). #}
+{% set here = {'tasks.focus': 'focus', 'pages.calendar': 'calendar', 'lists.index': 'lists'}.get(request.endpoint) %}
 <!doctype html>
-<html lang="en">
+{# data-theme and data-appearance pick the colors in style.css. #}
+<html lang="en" data-theme="{{ g.user.theme if g.user else 'default' }}"
+      data-appearance="{{ g.user.appearance if g.user else 'system' }}">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{% block title %}{% endblock %}To-Do List</title>
-  <meta name="theme-color" content="#5b4fe0">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  {# app.js and focus.js read the CSRF token from here for the forms they send. #}
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <title>{% block title %}{% endblock %}Later Gator</title>
+  {# The logo is also the icon in the browser tab and on a phone's home screen. #}
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='logo.png') }}">
+  <link rel="apple-touch-icon" href="{{ url_for('static', filename='logo.png') }}">
+  <meta name="theme-color" content="#214d3c">
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
-<body>
+<body{% if g.user %} class="has-nav"{% endif %}>
   <header class="topbar">
     <div class="wrap">
       <a class="brand" href="{{ url_for('tasks.index') }}">
-        <span class="brand-mark" aria-hidden="true">✓</span> To-Do List
+        <img class="brand-logo" src="{{ url_for('static', filename='logo.png') }}" alt="" width="34" height="34">
+        Later Gator
       </a>
 
+      {% if g.user %}
+        <nav class="main-nav" aria-label="Main">
+          {% for endpoint, icon, label, lit in nav_items %}
+            <a class="nav-link{% if request.endpoint in lit %} active{% endif %}" href="{{ url_for(endpoint) }}"
+               {% if request.endpoint in lit %}aria-current="page"{% endif %}>
+              <span aria-hidden="true">{{ icon }}</span> {{ label }}
+            </a>
+          {% endfor %}
+        </nav>
+      {% endif %}
+
       {# g.user is set in auth.py before every request (None when logged out). #}
-      <nav class="account" aria-label="Account">
+      <div class="account">
         {% if g.user %}
           {# reminders.js shows this button only while the browser hasn't been asked yet. #}
           <button id="enable-reminders" class="btn btn-small btn-ghost" type="button" hidden>
-            🔔<span class="hide-on-phone"> Turn on reminders</span>
+            🔔<span class="hide-on-phone"> Turn On Reminders</span>
           </button>
-          <span class="account-name">{{ g.user.username }}</span>
+          {# Your picture and name, linking to the profile page. #}
+          <a class="account-link" href="{{ url_for('profile.index') }}" aria-label="Your profile">
+            {{ ui.avatar(g.user) }}
+            <span class="account-name">{{ g.user.username }}</span>
+          </a>
           <form method="post" action="{{ url_for('auth.logout') }}">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <button class="btn btn-small" type="submit">Log out</button>
+            {{ ui.csrf() }}
+            <button class="btn btn-small" type="submit">Log Out</button>
           </form>
         {% else %}
-          <a class="btn btn-small btn-ghost" href="{{ url_for('auth.login') }}">Log in</a>
-          <a class="btn btn-small btn-primary" href="{{ url_for('auth.register') }}">Sign up</a>
+          <a class="btn btn-small btn-ghost" href="{{ url_for('auth.login') }}">Log In</a>
+          <a class="btn btn-small btn-primary" href="{{ url_for('auth.register') }}">Sign Up</a>
         {% endif %}
-      </nav>
+      </div>
     </div>
   </header>
 
@@ -40,21 +75,57 @@
       <div id="reminders" data-url="{{ url_for('tasks.reminders') }}" aria-live="polite"></div>
     {% endif %}
 
-    {# Messages saved with flash() show up once, on the next page.
-       flash(message, "error") shows in red. #}
-    {% for category, message in get_flashed_messages(with_categories=true) %}
-      {% if category == 'error' %}
-        <p class="flash flash-error" role="alert">{{ message }}</p>
-      {% else %}
-        <p class="flash" role="status">{{ message }}</p>
-      {% endif %}
-    {% endfor %}
-
     {% block content %}{% endblock %}
   </main>
 
+  {# Messages saved with flash() show up once, on the next page, as toasts
+     at the bottom. They fade away by themselves, except errors. #}
+  <div class="toasts">
+    {% for category, message in get_flashed_messages(with_categories=true) %}
+      {% if category == 'error' %}
+        <p class="toast flash flash-error" role="alert">{{ message }}</p>
+      {% elif category == 'undo' %}
+        <div class="toast flash flash-undo" role="status">
+          <span>{{ message }}</span>
+          <form method="post" action="{{ url_for('tasks.undo', **keep) }}">
+            {{ ui.csrf() }}{{ ui.back_fields(here) }}
+            <button class="toast-undo" type="submit">Undo</button>
+          </form>
+        </div>
+      {% else %}
+        <p class="toast flash" role="status">{{ message }}</p>
+      {% endif %}
+    {% endfor %}
+  </div>
+
   {% if g.user %}
+    {# The floating + button opens the quick-add sheet (a popover, like the task menus). #}
+    <button class="fab" type="button" popovertarget="quick-sheet" aria-label="Add a task">＋</button>
+    <div class="sheet" id="quick-sheet" popover>
+      <form method="post" action="{{ url_for('tasks.quick_add', **keep) }}">
+        {{ ui.csrf() }}
+        <label class="sheet-title" for="sheet-quick">New Task</label>
+        <input id="sheet-quick" name="text" type="text" required autocomplete="off"
+               placeholder="e.g. 🛒 buy eggs tomorrow 9am #errands">
+        <p class="hint">Dates, times, “every monday”, #tags, an emoji and ! for high priority all work.</p>
+        <div class="sheet-actions">
+          <a class="btn btn-ghost" href="{{ url_for('tasks.create', **keep) }}">More Options</a>
+          <button class="btn btn-primary" type="submit">Add Task</button>
+        </div>
+      </form>
+    </div>
+
+    <nav class="bottom-nav" aria-label="Main">
+      {% for endpoint, icon, label, lit in nav_items %}
+        <a class="{% if request.endpoint in lit %}active{% endif %}" href="{{ url_for(endpoint) }}"
+           {% if request.endpoint in lit %}aria-current="page"{% endif %}>
+          <span class="nav-icon" aria-hidden="true">{{ icon }}</span>{{ label }}
+        </a>
+      {% endfor %}
+    </nav>
+
     <script src="{{ url_for('static', filename='reminders.js') }}" defer></script>
+    <script src="{{ url_for('static', filename='app.js') }}" defer></script>
   {% endif %}
 </body>
 </html>
