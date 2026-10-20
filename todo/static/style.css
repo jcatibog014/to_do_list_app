@@ -1217,7 +1217,8 @@ fieldset.field { padding: 0; border: 0; }
   text-align: center;
 }
 .auth .card { text-align: left; } /* the form itself reads best left-aligned */
-.card-title { margin: 0 0 20px; font-size: 1.5rem; text-align: center; }
+/* Left-aligned, so the heading starts on the same line as the field labels. */
+.card-title { margin: 0 0 20px; font-size: 1.5rem; }
 .auth .card { position: relative; overflow: hidden; padding-top: 30px; }
 .auth .card::before {
   content: "";
