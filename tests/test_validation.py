@@ -12,6 +12,7 @@ from todo.validation import (
     TITLE_MAX,
     USERNAME_MAX,
     next_list_color,
+    capitalize_first,
     validate_list_color,
     validate_list_name,
     validate_password_change,
@@ -276,7 +277,7 @@ def test_every_offered_emoji_is_valid():
 def test_subtask_lines():
     data, errors = validate_task({"title": "ok", "subtasks": " a \n\nb\n"}, TODAY)
     assert errors == {}
-    assert data["subtasks"] == ["a", "b"]
+    assert data["subtasks"] == ["A", "B"]
 
     _, errors = validate_task({"title": "ok", "subtasks": "x" * 101}, TODAY)
     assert "100 characters" in errors["subtasks"]
@@ -286,7 +287,7 @@ def test_subtask_lines():
 
 
 def test_validate_subtask():
-    assert validate_subtask({"title": " milk "}) == ("milk", None)
+    assert validate_subtask({"title": " milk "}) == ("Milk", None)
     assert validate_subtask({"title": ""})[1] == "Type the subtask first."
 
 
@@ -322,3 +323,26 @@ def test_validate_password_change():
                                      "confirm_password": "new one!!"}) == ("new one!!", {})
     _, errors = validate_password_change({"new_password": "short", "confirm_password": "short"})
     assert set(errors) == {"current_password", "new_password"}
+
+
+# ---------- Capital letters ----------
+
+@pytest.mark.parametrize("text, expected", [
+    ("buy eggs", "Buy eggs"),
+    ("Buy eggs", "Buy eggs"),
+    ("call mom about the BBQ", "Call mom about the BBQ"),  # only the first letter changes
+    ("iPhone repair", "iPhone repair"),                    # mixed case on purpose stays
+    ("eBay order", "eBay order"),
+    ("#home stuff", "#home stuff"),                        # doesn't start with a letter
+    ("ñandu", "Ñandu"),
+    ("", ""),
+])
+def test_capitalize_first(text, expected):
+    assert capitalize_first(text) == expected
+
+
+def test_titles_and_list_names_are_capitalized():
+    data, _ = validate_task({"title": "pay rent", "subtasks": "find receipt\nsend money"}, TODAY)
+    assert data["title"] == "Pay rent"
+    assert data["subtasks"] == ["Find receipt", "Send money"]
+    assert validate_list_name({"name": "groceries"}) == ("Groceries", None)

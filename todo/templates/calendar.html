@@ -32,7 +32,7 @@
               <span class="day-number">{{ day.day }}</span>
               {% for task in day_tasks[:3] %}
                 <span class="day-task color-{{ task.color }}{% if task.completed %} done{% endif %}">
-                  {%- if task.emoji %}{{ task.emoji }} {% endif %}{{ task.title -}}
+                  {%- if task.emoji %}{{ task.emoji }} {% endif %}{{ task.title|capfirst -}}
                 </span>
               {% endfor %}
               {% if day_tasks|length > 3 %}<span class="day-more">+{{ day_tasks|length - 3 }} more</span>{% endif %}

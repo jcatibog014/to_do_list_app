@@ -59,6 +59,22 @@ USERNAME_FORMAT = re.compile(rf"[A-Za-z0-9_]{{{USERNAME_MIN},{USERNAME_MAX}}}")
 PASSWORD_MIN = 8
 
 
+def capitalize_first(text):
+    """Start the text with a capital letter: "buy eggs" -> "Buy eggs".
+
+    Only the first letter changes. A first word that mixes cases on purpose,
+    like "iPhone" or "eBay", is left alone, and so is everything after it.
+    The templates also use this as the |capfirst filter, so tasks saved
+    before this rule existed look the same.
+    """
+    if not text or not text[0].islower():
+        return text
+    rest_of_word = text.split()[0][1:]
+    if rest_of_word != rest_of_word.lower():  # "iPhone": "Phone" has a capital
+        return text
+    return text[0].upper() + text[1:]
+
+
 def validate_task(form, today, existing_due_date=None):
     """Return (data, errors).
 
@@ -77,7 +93,7 @@ def validate_task(form, today, existing_due_date=None):
     errors = {}
 
     # Trim spaces first, so a title of "   " counts as empty.
-    title = form.get("title", "").strip()
+    title = capitalize_first(form.get("title", "").strip())
     description = form.get("description", "").strip()
     due_text = form.get("due_date", "").strip()
     time_text = form.get("due_time", "").strip()
@@ -164,7 +180,7 @@ def validate_task(form, today, existing_due_date=None):
         errors["emoji"] = "Pick an emoji from the list."
 
     # One subtask per line. Blank lines are skipped.
-    subtasks = [line.strip() for line in subtasks_text.splitlines() if line.strip()]
+    subtasks = [capitalize_first(line.strip()) for line in subtasks_text.splitlines() if line.strip()]
     if any(len(line) > SUBTASK_MAX for line in subtasks):
         errors["subtasks"] = f"Each subtask must be {SUBTASK_MAX} characters or fewer."
     elif len(subtasks) > SUBTASKS_MAX:
@@ -189,7 +205,7 @@ def validate_task(form, today, existing_due_date=None):
 
 def validate_subtask(form):
     """Return (title, error) for the "add a subtask" box."""
-    title = form.get("title", "").strip()
+    title = capitalize_first(form.get("title", "").strip())
     if not title:
         return title, "Type the subtask first."
     if len(title) > SUBTASK_MAX:
@@ -297,7 +313,7 @@ def validate_list_name(form):
     Whether the user already has a list with that name needs the database,
     so tasks.py checks that part.
     """
-    name = " ".join(form.get("name", "").split())  # trim, and squash repeated spaces
+    name = capitalize_first(" ".join(form.get("name", "").split()))  # trim, squash repeated spaces
     if not name:
         return name, "Give the list a name."
     if len(name) > LIST_NAME_MAX:

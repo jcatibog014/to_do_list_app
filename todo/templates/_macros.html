@@ -45,9 +45,9 @@
     {% if task.remind_before is not none and not task.completed %}
       <span class="badge" title="Reminder on">🔔<span class="visually-hidden">Reminder on</span></span>
     {% endif %}
-    {% if task.repeat_text %}<span class="badge">↻ {{ task.repeat_text }}</span>{% endif %}
+    {% if task.repeat_text %}<span class="badge">↻ {{ task.repeat_text|capfirst }}</span>{% endif %}
     {% if show_list and task.list_name %}
-      <a class="badge badge-list" href="{{ list_url(list=task.list_id) }}"><span class="dot" aria-hidden="true"></span>{{ task.list_name }}</a>
+      <a class="badge badge-list" href="{{ list_url(list=task.list_id) }}"><span class="dot" aria-hidden="true"></span>{{ task.list_name|capfirst }}</a>
     {% endif %}
     {% for name in task.tags %}
       <a class="badge tag color-{{ tag_color(name) }}" href="{{ list_url(tag=name) }}">#{{ name }}</a>
@@ -60,17 +60,17 @@
    no JavaScript needed. app.js also opens it on a long press. #}
 {% macro task_menu(task, lists, next=None) -%}
   <div class="sheet menu" id="menu-{{ task.id }}" popover>
-    <p class="sheet-title">{% if task.emoji %}{{ task.emoji }} {% endif %}{{ task.title }}</p>
+    <p class="sheet-title">{% if task.emoji %}{{ task.emoji }} {% endif %}{{ task.title|capfirst }}</p>
     <a class="menu-item" href="{{ url_for('tasks.edit', task_id=task.id, **keep) }}">✏️ Edit</a>
     {% if not task.completed %}
       <form method="post" action="{{ url_for('tasks.tomorrow', task_id=task.id, **keep) }}">
         {{ csrf() }}{{ back_fields(next) }}
-        <button class="menu-item" type="submit">☀️ Move to tomorrow</button>
+        <button class="menu-item" type="submit">☀️ Move to Tomorrow</button>
       </form>
     {% endif %}
     <form method="post" action="{{ url_for('tasks.toggle_priority', task_id=task.id, **keep) }}">
       {{ csrf() }}{{ back_fields(next) }}
-      <button class="menu-item" type="submit">⭐ {{ 'Make normal priority' if task.priority else 'Make high priority' }}</button>
+      <button class="menu-item" type="submit">⭐ {{ 'Make Normal Priority' if task.priority else 'Make High Priority' }}</button>
     </form>
     <form class="menu-move" method="post" action="{{ url_for('tasks.move', task_id=task.id, **keep) }}">
       {{ csrf() }}{{ back_fields(next) }}
@@ -79,7 +79,7 @@
         <select id="move-{{ task.id }}" name="list_id">
           <option value="">Inbox</option>
           {% for item in lists %}
-            <option value="{{ item.id }}" {% if item.id == task.list_id %}selected{% endif %}>{{ item.name }}</option>
+            <option value="{{ item.id }}" {% if item.id == task.list_id %}selected{% endif %}>{{ item.name|capfirst }}</option>
           {% endfor %}
         </select>
         <button class="btn btn-small" type="submit">Move</button>
@@ -106,7 +106,7 @@
         </button>
       </form>
       <a class="task-title" href="{{ url_for('tasks.edit', task_id=task.id, **keep) }}">
-        {%- if task.emoji %}<span class="task-emoji" aria-hidden="true">{{ task.emoji }}</span> {% endif %}{{ task.title -}}
+        {%- if task.emoji %}<span class="task-emoji" aria-hidden="true">{{ task.emoji }}</span> {% endif %}{{ task.title|capfirst -}}
       </a>
       <button class="menu-button" type="button" popovertarget="menu-{{ task.id }}"
               aria-label="More actions for {{ task.title }}">⋯</button>
@@ -125,7 +125,7 @@
                 <button class="step-check" type="submit"
                         aria-label="{{ 'Untick' if step.done else 'Tick' }}: {{ step.title }}">{% if step.done %}✓{% endif %}</button>
               </form>
-              <span>{{ step.title }}</span>
+              <span>{{ step.title|capfirst }}</span>
             </li>
           {% endfor %}
           {% if task.subtasks|length > 6 %}<li class="step-more">+{{ task.subtasks|length - 6 }} more</li>{% endif %}
@@ -145,7 +145,7 @@
       draggable="true" data-status-url="{{ url_for('tasks.set_status', task_id=task.id, **keep) }}">
     <div class="card-head">
       <a class="task-title" href="{{ url_for('tasks.edit', task_id=task.id, **keep) }}">
-        {%- if task.emoji %}<span class="task-emoji" aria-hidden="true">{{ task.emoji }}</span> {% endif %}{{ task.title -}}
+        {%- if task.emoji %}<span class="task-emoji" aria-hidden="true">{{ task.emoji }}</span> {% endif %}{{ task.title|capfirst -}}
       </a>
       <button class="menu-button" type="button" popovertarget="menu-{{ task.id }}"
               aria-label="More actions for {{ task.title }}">⋯</button>

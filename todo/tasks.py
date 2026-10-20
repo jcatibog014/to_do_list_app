@@ -36,6 +36,7 @@ from .validation import (
     SUBTASK_MAX,
     SUBTASKS_MAX,
     TITLE_MAX,
+    capitalize_first,
     validate_subtask,
     validate_task,
 )
@@ -58,7 +59,7 @@ VIEWS = {"cards": "Grid", "list": "List", "board": "Board"}
 
 # The board's columns. "done" is the completed column, and "doing" is the
 # tasks.doing column.
-BOARD_COLUMNS = {"todo": "To do", "doing": "Doing", "done": "Done"}
+BOARD_COLUMNS = {"todo": "To Do", "doing": "Doing", "done": "Done"}
 
 
 # ---------- Helpers ----------
@@ -358,6 +359,11 @@ def go_back(task_id=None):
     return back_to_list()
 
 
+# In templates: {{ task.title|capfirst }}. Older tasks may have been saved
+# before titles were capitalized, so the pages capitalize them too.
+bp.add_app_template_filter(capitalize_first, "capfirst")
+
+
 @bp.app_context_processor
 def template_values():
     # Every template can use `keep` to carry the current view in its links,
@@ -430,11 +436,11 @@ def render_list(quick_text="", quick_error=None):
         board[column].append(t)
 
     if current_list:
-        heading = current_list["name"]
+        heading = capitalize_first(current_list["name"])
     elif args.get("list") == "inbox":
         heading = "Inbox"
     else:
-        heading = "My tasks"
+        heading = "My Tasks"
 
     html = render_template(
         "index.html", tasks=shown, counts=counts, filters=FILTERS, status=status, q=q,
@@ -600,7 +606,7 @@ def complete_task(db, task):
         " repeat = NULL, doing = 0 WHERE id = ?",
         (task["id"],),
     )
-    message = f"Completed “{task['title']}”."
+    message = f"Completed “{capitalize_first(task['title'])}”."
     copy_id = None
     if task["repeat"] and task["due_date"]:
         next_date = next_due_after(task["repeat"], date.fromisoformat(task["due_date"]), today())
@@ -625,7 +631,7 @@ def toggle(task_id):
     db = get_db()
     if task["completed"]:
         db.execute("UPDATE tasks SET completed = 0, completed_at = NULL WHERE id = ?", (task_id,))
-        notify(f"Marked “{task['title']}” as not done.")
+        notify(f"Marked “{capitalize_first(task['title'])}” as not done.")
     else:
         notify(complete_task(db, task), "undo")
     db.commit()
@@ -648,7 +654,7 @@ def set_status(task_id):
             "UPDATE tasks SET completed = 0, completed_at = NULL, doing = ? WHERE id = ?",
             (1 if status == "doing" else 0, task_id),
         )
-        notify(f"Moved “{task['title']}” to {BOARD_COLUMNS[status]}.")
+        notify(f"Moved “{capitalize_first(task['title'])}” to {BOARD_COLUMNS[status]}.")
     db.commit()
     return go_back()
 
@@ -661,7 +667,7 @@ def tomorrow(task_id):
     db.execute("UPDATE tasks SET due_date = ? WHERE id = ?",
                ((today() + timedelta(days=1)).isoformat(), task_id))
     db.commit()
-    notify(f"Moved “{task['title']}” to tomorrow.")
+    notify(f"Moved “{capitalize_first(task['title'])}” to tomorrow.")
     return go_back()
 
 
@@ -671,7 +677,7 @@ def toggle_priority(task_id):
     db = get_db()
     db.execute("UPDATE tasks SET priority = ? WHERE id = ?", (0 if task["priority"] else 1, task_id))
     db.commit()
-    notify(f"“{task['title']}” is {'normal' if task['priority'] else 'high'} priority now.")
+    notify(f"“{capitalize_first(task['title'])}” is {'normal' if task['priority'] else 'high'} priority now.")
     return go_back()
 
 
@@ -690,7 +696,7 @@ def move(task_id):
     db.execute("UPDATE tasks SET list_id = ? WHERE id = ?", (data["list_id"], task_id))
     db.commit()
     name = get_list_or_404(data["list_id"])["name"] if data["list_id"] else "Inbox"
-    notify(f"Moved “{task['title']}” to {name}.")
+    notify(f"Moved “{capitalize_first(task['title'])}” to {name}.")
     return go_back()
 
 
@@ -708,7 +714,7 @@ def add_subtask(task_id):
         db = get_db()
         db.execute("INSERT INTO subtasks (task_id, title) VALUES (?, ?)", (task_id, title))
         db.commit()
-        notify(f"Added “{title}” to “{task['title']}”.")
+        notify(f"Added “{title}” to “{capitalize_first(task['title'])}”.")
     return go_back(task_id)
 
 
@@ -728,7 +734,7 @@ def delete_subtask(subtask_id):
     db = get_db()
     db.execute("DELETE FROM subtasks WHERE id = ?", (subtask_id,))
     db.commit()
-    notify(f"Removed “{step['title']}”.")
+    notify(f"Removed “{capitalize_first(step['title'])}”.")
     return go_back(step["task_id"])
 
 
@@ -747,7 +753,7 @@ def delete(task_id):
     })
     delete_task_rows(db, task_id)
     db.commit()
-    notify(f"Deleted “{task['title']}”.", "undo")
+    notify(f"Deleted “{capitalize_first(task['title'])}”.", "undo")
     return go_back()
 
 
@@ -788,7 +794,7 @@ def undo():
         for step in action["subtasks"]:
             db.execute("INSERT INTO subtasks (task_id, title, done) VALUES (?, ?, ?)",
                        (task["id"], step["title"], step["done"]))
-        message = f"Brought back “{task['title']}”."
+        message = f"Brought back “{capitalize_first(task['title'])}”."
     db.commit()
     notify(message)
     return go_back()

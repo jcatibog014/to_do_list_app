@@ -30,7 +30,7 @@ def test_profile_page(client, add):
     html = " ".join(client.get("/profile").get_data(as_text=True).split())
     assert "<h1>alice</h1>" in html
     assert "@alice" in html
-    assert '<strong>1</strong> done' in html and '<strong>1</strong> open' in html
+    assert '<strong>1</strong> Done' in html and '<strong>1</strong> Open' in html
     assert 'href="/stats"' in html
     # With no picture, the first letter stands in.
     assert '<span class="avatar avatar-big" aria-hidden="true">A</span>' in html

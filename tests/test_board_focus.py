@@ -28,7 +28,7 @@ def test_form_saves_emoji_and_priority(post, fetch):
 def test_quick_add_reads_emoji_and_priority(post, fetch):
     post("/tasks/quick", {"text": "💪 gym tomorrow 6am !"})
     task = fetch(1)
-    assert (task["title"], task["emoji"], task["priority"]) == ("gym", "💪", 1)
+    assert (task["title"], task["emoji"], task["priority"]) == ("Gym", "💪", 1)  # the first letter is capitalized
 
 
 def test_priority_cards_glow(client, add):
@@ -42,7 +42,7 @@ def test_priority_cards_glow(client, add):
 
 def test_new_task_form_adds_subtasks(post, app):
     post("/tasks/new", {"title": "Trip", "subtasks": "passport\n\n  charger  \n"})
-    assert subtasks_of(app, 1) == [{"title": "passport", "done": 0}, {"title": "charger", "done": 0}]
+    assert subtasks_of(app, 1) == [{"title": "Passport", "done": 0}, {"title": "Charger", "done": 0}]
 
 
 def test_add_tick_and_remove_a_subtask(client, post, add, app):
@@ -50,7 +50,7 @@ def test_add_tick_and_remove_a_subtask(client, post, add, app):
     response = post(f"/tasks/{task_id}/subtasks", {"title": "passport", "next": "edit"})
     assert response.headers["Location"] == f"/tasks/{task_id}/edit"
     post("/subtasks/1/toggle", {"next": "edit"})
-    assert subtasks_of(app, task_id) == [{"title": "passport", "done": 1}]
+    assert subtasks_of(app, task_id) == [{"title": "Passport", "done": 1}]
 
     post("/subtasks/1/delete")
     assert subtasks_of(app, task_id) == []
@@ -229,14 +229,14 @@ def test_focus_buttons_act_on_the_top_card_and_come_back(post, add, fetch):
 def test_focus_all_clear(client, add):
     add("Done", completed=True)
     html = client.get("/focus").get_data(as_text=True)
-    assert "All clear!" in html
+    assert "All Clear!" in html
     assert "Go enjoy your day." in html
 
 
 def test_all_clear_on_the_home_page_when_everything_is_done(client, add):
     add("Done", completed=True)
     html = client.get("/?status=active").get_data(as_text=True)
-    assert "All clear!" in html
+    assert "All Clear!" in html
 
 
 # ---------- Undo ----------
@@ -277,7 +277,7 @@ def test_undo_delete_brings_everything_back(client, post, app, fetch, tags_of):
     task = fetch(1)  # the same id as before
     assert (task["title"], task["emoji"]) == ("Trip", "✈️")
     assert tags_of(1) == ["travel"]
-    assert subtasks_of(app, 1) == [{"title": "passport", "done": 1}, {"title": "charger", "done": 0}]
+    assert subtasks_of(app, 1) == [{"title": "Passport", "done": 1}, {"title": "Charger", "done": 0}]
     assert "Brought back “Trip”." in client.get("/").get_data(as_text=True)
 
 

@@ -32,13 +32,13 @@
   {% for item in lists %}
     <article class="list-card color-{{ item.color }}" id="list-{{ item.id }}">
       <a class="list-card-link" href="{{ url_for('tasks.index', list=item.id) }}">
-        <span class="dot" aria-hidden="true"></span> {{ item.name }}
+        <span class="dot" aria-hidden="true"></span> {{ item.name|capfirst }}
       </a>
       <p class="list-counts">{{ item.open_count }} open · {{ item.done_count }} done</p>
       {{ progress(item.open_count, item.done_count) }}
 
       <details class="list-edit">
-        <summary>Edit list</summary>
+        <summary>Edit List</summary>
         <form class="inline-form" method="post" action="{{ url_for('lists.rename', list_id=item.id) }}">
           {{ ui.csrf() }}{{ ui.back_fields('lists') }}
           <label class="visually-hidden" for="rename-{{ item.id }}">New name</label>
@@ -57,7 +57,7 @@
         <form method="post" action="{{ url_for('lists.delete', list_id=item.id) }}"
               onsubmit="return confirm('Delete this list? Its tasks will move to the Inbox.');">
           {{ ui.csrf() }}{{ ui.back_fields('lists') }}
-          <button class="btn btn-small btn-ghost btn-danger" type="submit">Delete list</button>
+          <button class="btn btn-small btn-ghost btn-danger" type="submit">Delete List</button>
         </form>
       </details>
     </article>
@@ -66,7 +66,7 @@
   <article class="list-card new-list-card">
     <form method="post" action="{{ url_for('lists.create') }}">
       {{ ui.csrf() }}{{ ui.back_fields('lists') }}
-      <label class="sheet-title" for="list-name">New list</label>
+      <label class="sheet-title" for="list-name">New List</label>
       <input id="list-name" name="name" type="text" required maxlength="{{ list_name_max }}" placeholder="e.g. Work">
       <fieldset class="swatches">
         <legend class="visually-hidden">Color</legend>
@@ -80,7 +80,7 @@
           </label>
         {% endfor %}
       </fieldset>
-      <button class="btn btn-primary btn-small" type="submit">Add list</button>
+      <button class="btn btn-primary btn-small" type="submit">Add List</button>
     </form>
   </article>
 </div>

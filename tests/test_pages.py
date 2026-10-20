@@ -63,7 +63,7 @@ def test_rename_refuses_a_taken_name(client, post, app):
     post("/lists/2/rename", {"name": "work"})
     with app.app_context():
         assert get_db().execute("SELECT name FROM lists WHERE id = 2").fetchone()["name"] == "Home"
-    assert "You already have a list called “work”." in client.get("/").get_data(as_text=True)
+    assert "You already have a list called “Work”." in client.get("/").get_data(as_text=True)
 
 
 def test_list_actions_can_return_to_the_lists_page(post):
@@ -136,9 +136,9 @@ def test_stats_page(client, add, app):
     add("Open", due_date="2026-10-19")
     add("Late", due_date="2026-10-01")
     html = " ".join(client.get("/stats").get_data(as_text=True).split())
-    assert "🔥 2</p> <p class=\"stat-label\">day streak · best 2" in html
-    assert '<p class="stat-number">2</p><p class="stat-label">open</p>' in html
-    assert '<p class="stat-number">3</p><p class="stat-label">done</p>' in html
+    assert "🔥 2</p> <p class=\"stat-label\">Day streak · best 2" in html
+    assert '<p class="stat-number">2</p><p class="stat-label">Open</p>' in html
+    assert '<p class="stat-number">3</p><p class="stat-label">Done</p>' in html
     assert '<span class="week-count">2</span>' in html  # two done today
 
 

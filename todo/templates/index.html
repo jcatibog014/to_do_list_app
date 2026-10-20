@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% import "_macros.html" as ui with context %}
 
-{% block title %}{% if heading != 'My tasks' %}{{ heading }} · {% endif %}{% endblock %}
+{% block title %}{% if heading != 'My Tasks' %}{{ heading }} · {% endif %}{% endblock %}
 
 {% block content %}
 {# Greeting and today's progress. The banner takes the color of the list on screen. #}
@@ -28,7 +28,7 @@
         <span style="width: {{ (100 * day_done / day_total)|round|int }}%"></span>
       </div>
     {% endif %}
-    <a class="btn btn-glass" href="{{ url_for('tasks.focus') }}">🎯 Focus mode</a>
+    <a class="btn btn-glass" href="{{ url_for('tasks.focus') }}">🎯 Focus Mode</a>
   </div>
 </header>
 
@@ -41,7 +41,7 @@
   {% for item in lists %}
     {% set is_current = current_list and current_list.id == item.id %}
     <a class="chip color-{{ item.color }}{% if is_current %} active{% endif %}" href="{{ list_url(list=item.id) }}"
-       {% if is_current %}aria-current="page"{% endif %}><span class="dot" aria-hidden="true"></span>{{ item.name }}</a>
+       {% if is_current %}aria-current="page"{% endif %}><span class="dot" aria-hidden="true"></span>{{ item.name|capfirst }}</a>
   {% endfor %}
   <a class="chip chip-add" href="{{ url_for('lists.index') }}">＋ Lists</a>
 </nav>
@@ -100,7 +100,7 @@
 
 {% if tag %}
   <p class="filter-note">
-    Showing tasks tagged <strong>#{{ tag }}</strong> · <a href="{{ list_url(tag=None) }}">Show all tags</a>
+    Showing tasks tagged <strong>#{{ tag }}</strong> · <a href="{{ list_url(tag=None) }}">Show All Tags</a>
   </p>
 {% endif %}
 
@@ -136,7 +136,7 @@
   {# Nothing left to do: celebrate. #}
   <div class="empty all-clear">
     {{ ui.all_clear() }}
-    <h2>All clear!</h2>
+    <h2>All Clear!</h2>
     <p>Go enjoy your day.</p>
   </div>
 {% else %}
@@ -145,7 +145,7 @@
 
 {% if current_list %}
   <p class="list-tools">
-    <a href="{{ url_for('lists.index') }}#list-{{ current_list.id }}">Rename, recolor or delete “{{ current_list.name }}”</a>
+    <a href="{{ url_for('lists.index') }}#list-{{ current_list.id }}">Rename, recolor or delete “{{ current_list.name|capfirst }}”</a>
   </p>
 {% endif %}
 {% endblock %}

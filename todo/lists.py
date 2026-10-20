@@ -14,6 +14,7 @@ from .tasks import get_list_or_404, go_back, notify, user_lists
 from .validation import (
     LIST_COLORS,
     LIST_NAME_MAX,
+    capitalize_first,
     next_list_color,
     validate_list_color,
     validate_list_name,
@@ -86,7 +87,7 @@ def rename(list_id):
         except sqlite3.IntegrityError:
             error = f"You already have a list called “{name}”."
         else:
-            notify(f"Renamed “{found['name']}” to “{name}”.")
+            notify(f"Renamed “{capitalize_first(found['name'])}” to “{name}”.")
     if error:
         notify(error, "error")
     return go_back()
@@ -102,7 +103,7 @@ def change_color(list_id):
         db = get_db()
         db.execute("UPDATE lists SET color = ? WHERE id = ?", (color, list_id))
         db.commit()
-        notify(f"“{found['name']}” is {color} now.")
+        notify(f"“{capitalize_first(found['name'])}” is {color} now.")
     return go_back()
 
 
@@ -114,7 +115,7 @@ def delete(list_id):
     db.execute("UPDATE tasks SET list_id = NULL WHERE list_id = ?", (list_id,))
     db.execute("DELETE FROM lists WHERE id = ?", (list_id,))
     db.commit()
-    notify(f"Deleted the list “{found['name']}”. Its tasks are in the Inbox now.")
+    notify(f"Deleted the list “{capitalize_first(found['name'])}”. Its tasks are in the Inbox now.")
     if request.values.get("next") == "lists":
         return redirect(url_for("lists.index"))
     return redirect(url_for("tasks.index"))

@@ -14,17 +14,17 @@
 <div class="stat-tiles">
   <div class="stat-tile streak">
     <p class="stat-number">🔥 {{ current }}</p>
-    <p class="stat-label">day streak · best {{ best }}</p>
+    <p class="stat-label">Day streak · best {{ best }}</p>
   </div>
-  <div class="stat-tile color-blue"><p class="stat-number">{{ totals.open }}</p><p class="stat-label">open</p></div>
-  <div class="stat-tile color-amber"><p class="stat-number">{{ totals.today }}</p><p class="stat-label">due today</p></div>
-  <div class="stat-tile color-red"><p class="stat-number">{{ totals.overdue }}</p><p class="stat-label">overdue</p></div>
-  <div class="stat-tile color-green"><p class="stat-number">{{ totals.done }}</p><p class="stat-label">done</p></div>
+  <div class="stat-tile color-blue"><p class="stat-number">{{ totals.open }}</p><p class="stat-label">Open</p></div>
+  <div class="stat-tile color-amber"><p class="stat-number">{{ totals.today }}</p><p class="stat-label">Due today</p></div>
+  <div class="stat-tile color-red"><p class="stat-number">{{ totals.overdue }}</p><p class="stat-label">Overdue</p></div>
+  <div class="stat-tile color-green"><p class="stat-number">{{ totals.done }}</p><p class="stat-label">Done</p></div>
 </div>
 
 <div class="stats-grid">
   <section class="card">
-    <h2>Last 7 days</h2>
+    <h2>Last 7 Days</h2>
     {# A bar chart made of divs: each bar's height is its share of the busiest day. #}
     <div class="week-chart">
       {% for day, count in week %}
@@ -42,7 +42,7 @@
     <h2>Lists</h2>
     {% for row in per_list %}
       <div class="list-progress color-{{ row.list.color }}">
-        <p><span class="dot" aria-hidden="true"></span> {{ row.list.name }} <span class="hint">{{ row.done }} of {{ row.total }} done</span></p>
+        <p><span class="dot" aria-hidden="true"></span> {{ row.list.name|capfirst }} <span class="hint">{{ row.done }} of {{ row.total }} done</span></p>
         <div class="day-bar small" role="progressbar" aria-label="{{ row.list.name }}"
              aria-valuemin="0" aria-valuemax="{{ row.total }}" aria-valuenow="{{ row.done }}">
           <span style="width: {{ (100 * row.done / row.total)|round|int if row.total else 0 }}%"></span>

@@ -50,7 +50,7 @@
         {% if g.user %}
           {# reminders.js shows this button only while the browser hasn't been asked yet. #}
           <button id="enable-reminders" class="btn btn-small btn-ghost" type="button" hidden>
-            🔔<span class="hide-on-phone"> Turn on reminders</span>
+            🔔<span class="hide-on-phone"> Turn On Reminders</span>
           </button>
           {# Your picture and name, linking to the profile page. #}
           <a class="account-link" href="{{ url_for('profile.index') }}" aria-label="Your profile">
@@ -59,11 +59,11 @@
           </a>
           <form method="post" action="{{ url_for('auth.logout') }}">
             {{ ui.csrf() }}
-            <button class="btn btn-small" type="submit">Log out</button>
+            <button class="btn btn-small" type="submit">Log Out</button>
           </form>
         {% else %}
-          <a class="btn btn-small btn-ghost" href="{{ url_for('auth.login') }}">Log in</a>
-          <a class="btn btn-small btn-primary" href="{{ url_for('auth.register') }}">Sign up</a>
+          <a class="btn btn-small btn-ghost" href="{{ url_for('auth.login') }}">Log In</a>
+          <a class="btn btn-small btn-primary" href="{{ url_for('auth.register') }}">Sign Up</a>
         {% endif %}
       </div>
     </div>
@@ -104,13 +104,13 @@
     <div class="sheet" id="quick-sheet" popover>
       <form method="post" action="{{ url_for('tasks.quick_add', **keep) }}">
         {{ ui.csrf() }}
-        <label class="sheet-title" for="sheet-quick">New task</label>
+        <label class="sheet-title" for="sheet-quick">New Task</label>
         <input id="sheet-quick" name="text" type="text" required autocomplete="off"
                placeholder="e.g. 🛒 buy eggs tomorrow 9am #errands">
         <p class="hint">Dates, times, “every monday”, #tags, an emoji and ! for high priority all work.</p>
         <div class="sheet-actions">
-          <a class="btn btn-ghost" href="{{ url_for('tasks.create', **keep) }}">More options</a>
-          <button class="btn btn-primary" type="submit">Add task</button>
+          <a class="btn btn-ghost" href="{{ url_for('tasks.create', **keep) }}">More Options</a>
+          <button class="btn btn-primary" type="submit">Add Task</button>
         </div>
       </form>
     </div>
