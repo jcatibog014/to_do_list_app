@@ -59,6 +59,10 @@ def index():
 @bp.post("/profile")
 def update_info():
     data, errors = validate_profile(request.form)
+    # The demo login is shared (see demo.py), so its username must stay put.
+    # The box is read-only on the page, but a form can be sent without it.
+    if g.user["is_demo"] and data["username"] != g.user["username"]:
+        errors["username"] = "The demo account's username can't be changed."
     if not errors:
         db = get_db()
         try:
@@ -78,6 +82,11 @@ def update_info():
 
 @bp.post("/profile/password")
 def change_password():
+    if g.user["is_demo"]:
+        # The demo password is set with "flask create-demo" (demo.py), so the
+        # people it's shared with can't lock each other out.
+        notify("The demo account's password can't be changed here.", "error")
+        return redirect(url_for("profile.index"))
     new_password, errors = validate_password_change(request.form)
     # Asking for the current password stops someone who finds your phone
     # unlocked from locking you out of your own account.

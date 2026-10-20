@@ -62,9 +62,11 @@
         {{ text_field('display_name', 'Your name', info_form.get('display_name', ''), info_errors,
                       hint='(optional, used in your greeting)',
                       extra='maxlength="' ~ display_name_max ~ '" autocomplete="name" placeholder="e.g. Janelle"') }}
+        {# The demo account's username is shared with others, so it's read-only. #}
         {{ text_field('username', 'Username', info_form.get('username', ''), info_errors,
-                      hint='(you log in with this)',
-                      extra='required maxlength="' ~ username_max ~ '" autocomplete="username"') }}
+                      hint='(the demo login stays the same)' if g.user.is_demo else '(you log in with this)',
+                      extra='required maxlength="' ~ username_max ~ '" autocomplete="username"'
+                            ~ (' readonly' if g.user.is_demo else '')) }}
       </div>
       <button class="btn btn-primary" type="submit">Save Info</button>
     </form>
@@ -72,6 +74,10 @@
 
   <section class="card" id="password">
     <h2>Password</h2>
+    {% if g.user.is_demo %}
+      {# The demo login is shared with others, so it stays as it was set up (demo.py). #}
+      <p class="hint">This is a demo account, so its password can't be changed here.</p>
+    {% else %}
     {# The password boxes always start empty: the server never sends a password back. #}
     <form method="post" action="{{ url_for('profile.change_password') }}">
       {{ ui.csrf() }}
@@ -86,6 +92,7 @@
       </div>
       <button class="btn btn-primary" type="submit">Change Password</button>
     </form>
+    {% endif %}
   </section>
 
   <section class="card" id="theme">

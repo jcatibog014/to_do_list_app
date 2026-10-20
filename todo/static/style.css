@@ -1358,3 +1358,4 @@ fieldset.field { padding: 0; border: 0; }
 .profile-stats { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 18px; }
 .profile-stats p { margin: 0; font-size: 0.9rem; }
 .profile-stats strong { display: block; font-size: 1.3rem; }
+
