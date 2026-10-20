@@ -1,30 +1,31 @@
-"""Try the Demo: one click makes a private demo account full of example
-tasks, and logs you in.
+"""One demo account, full of example tasks, to show the app to someone.
 
-Every visitor gets their own copy, so nobody can spoil the demo for the
-next person. Demo accounts have a random password nobody knows, and are
-deleted a day after they're made.
+Make it on the server with:
+
+    flask --app todo create-demo
+
+It asks for a username and a password, so the password never has to be
+written in the code (which is public on GitHub). Running it again puts
+fresh example tasks back. The account is marked users.is_demo = 1, and
+the profile page won't let anyone change its username or password, so the
+login you share keeps working.
 """
-import secrets
 from datetime import timedelta
 
-from flask import Blueprint, flash, redirect, url_for
+import click
+from flask.cli import with_appcontext
 from werkzeug.security import generate_password_hash
 
-from .auth import log_in
 from .db import get_db
 from .recurrence import first_due
 from .tasks import today
-
-bp = Blueprint("demo", __name__)
-
-DEMO_LIFETIME = "-1 day"  # for SQLite's datetime(): how long a demo account lasts
+from .validation import password_error, username_error
 
 # The example lists: name -> color.
 DEMO_LISTS = {"Work": "blue", "Home": "teal", "Errands": "orange", "School": "pink", "Health": "green"}
 
-# The example tasks. "days" is the due date counted from today (None = no
-# date); the other keys are columns of the tasks table.
+# The example tasks. "days" is the due date counted from today; the other
+# keys are columns of the tasks table.
 DEMO_TASKS = [
     {"title": "Finish thesis chapter 2", "emoji": "📚", "list": "School", "days": 1, "due_time": "20:00",
      "priority": 1, "remind_before": 0, "tags": ["urgent"]},
@@ -49,25 +50,18 @@ DEMO_DONE = [("Water the plants", 0), ("Morning run", 0), ("Clean the kitchen", 
 TASK_COLUMNS = ["title", "description", "due_time", "repeat", "remind_before", "priority", "emoji", "doing"]
 
 
-def delete_old_demos(db):
-    """Delete demo accounts older than a day, with everything in them."""
-    old = [row["id"] for row in db.execute(
-        "SELECT id FROM users WHERE is_demo = 1 AND created_at < datetime('now', 'localtime', ?)",
-        (DEMO_LIFETIME,),
-    )]
-    for user_id in old:
-        # Rows that point to other rows go first: tag links and subtasks
-        # point to tasks, and everything points to the user.
-        task_ids = "SELECT id FROM tasks WHERE user_id = ?"
-        db.execute(f"DELETE FROM task_tags WHERE task_id IN ({task_ids})", (user_id,))
-        db.execute(f"DELETE FROM subtasks WHERE task_id IN ({task_ids})", (user_id,))
-        for table in ["tasks", "tags", "lists", "undo"]:
-            db.execute(f"DELETE FROM {table} WHERE user_id = ?", (user_id,))
-        db.execute("DELETE FROM users WHERE id = ?", (user_id,))
+def clear_user_data(db, user_id):
+    """Delete everything a user has (tasks, lists, tags...), but keep the account."""
+    # Rows that point to other rows go first: tag links and subtasks point to tasks.
+    task_ids = "SELECT id FROM tasks WHERE user_id = ?"
+    db.execute(f"DELETE FROM task_tags WHERE task_id IN ({task_ids})", (user_id,))
+    db.execute(f"DELETE FROM subtasks WHERE task_id IN ({task_ids})", (user_id,))
+    for table in ["tasks", "tags", "lists", "undo"]:
+        db.execute(f"DELETE FROM {table} WHERE user_id = ?", (user_id,))
 
 
 def add_demo_data(db, user_id, now):
-    """Fill a new demo account with the example lists and tasks."""
+    """Fill the demo account with the example lists and tasks."""
     list_ids = {}
     for name, color in DEMO_LISTS.items():
         cursor = db.execute("INSERT INTO lists (user_id, name, color) VALUES (?, ?, ?)", (user_id, name, color))
@@ -79,7 +73,7 @@ def add_demo_data(db, user_id, now):
         else:
             # A repeating task without a date starts on its first day, like
             # "every Monday" starting on the coming Monday.
-            due = first_due(example["repeat"], now).isoformat() if example.get("repeat") else None
+            due = first_due(example["repeat"], now).isoformat()
         values = [example.get(column) for column in TASK_COLUMNS]
         values[TASK_COLUMNS.index("description")] = example.get("description", "")
         values[TASK_COLUMNS.index("priority")] = example.get("priority", 0)
@@ -104,20 +98,39 @@ def add_demo_data(db, user_id, now):
         )
 
 
-@bp.post("/demo")
-def start():
-    """Make a fresh demo account, fill it with examples, and log in."""
+@click.command("create-demo")
+@click.option("--username", prompt="Demo username", default="demo", show_default=True)
+# hide_input keeps the password off the screen, and confirmation_prompt asks twice.
+@click.option("--password", prompt="Demo password", hide_input=True, confirmation_prompt=True)
+@with_appcontext  # gives the command the app's config and database, like a page has
+def create_demo_command(username, password):
+    """Make the demo account (or refill it) with example tasks."""
+    username = username.strip()
+    if error := username_error(username) or password_error(password):
+        raise click.UsageError(error)
+
     db = get_db()
-    delete_old_demos(db)
-    # A random name and password: nobody can log in to it again later.
-    username = f"demo_{secrets.token_hex(3)}"
-    cursor = db.execute(
-        "INSERT INTO users (username, password_hash, display_name, avatar, is_demo)"
-        " VALUES (?, ?, 'Demo', '🦊', 1)",
-        (username, generate_password_hash(secrets.token_urlsafe(16))),
-    )
-    add_demo_data(db, cursor.lastrowid, today())
+    user = db.execute("SELECT * FROM users WHERE username = ?", (username,)).fetchone()
+    if user and not user["is_demo"]:
+        # Plain quotes: some consoles can't show curly ones.
+        raise click.UsageError(f'"{username}" is a real person\'s account. Pick another username for the demo.')
+
+    if user:
+        # Run again: same account, new password, and fresh example tasks.
+        clear_user_data(db, user["id"])
+        db.execute("UPDATE users SET password_hash = ? WHERE id = ?", (generate_password_hash(password), user["id"]))
+        user_id = user["id"]
+    else:
+        cursor = db.execute(
+            "INSERT INTO users (username, password_hash, display_name, avatar, is_demo)"
+            " VALUES (?, ?, 'Demo', '🦊', 1)",
+            (username, generate_password_hash(password)),
+        )
+        user_id = cursor.lastrowid
+    add_demo_data(db, user_id, today())
     db.commit()
-    log_in(cursor.lastrowid)
-    flash("Welcome to the demo! Change anything you like. This demo account is deleted after a day.")
-    return redirect(url_for("tasks.index"))
+    click.echo(f'Demo account ready. Log in as "{username}" with the password you typed.')
+
+
+def init_app(app):
+    app.cli.add_command(create_demo_command)

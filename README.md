@@ -35,7 +35,7 @@ The home screen: a greeting with today's progress, list chips, quick add, and a 
 ## Features
 
 - **Accounts**: sign up, log in and log out. Each person sees and changes only their own tasks.
-- **Try the Demo**: one button on the log in page opens a private demo account full of example tasks, with no sign-up. Each visitor gets their own copy, and it's deleted after a day.
+- **Demo account**: one command makes a demo account full of example tasks, with a username and password you choose, to share with someone privately. Its username and password can't be changed from the app.
 - **Quick add**: type one line like `pay rent friday 5pm #home` and press Enter. The app reads the date, time, repeat and tags out of it. It understands `today`, `tomorrow`, day names, `next friday`, `in 3 days`, `oct 25`, `5pm`, `17:30`, `noon`, repeats like `every day`, `every 2 weeks`, `every weekday` or `every 2nd monday`, `#tags`, `!` for high priority, and an emoji like 🛒.
 - **Create** tasks with the full form too: title, description, due date and time, repeat, reminder, list, tags, an emoji, high priority and subtasks.
 - **Edit** a task.
@@ -75,7 +75,9 @@ Python 3.13 is installed at `%LOCALAPPDATA%\Programs\Python\Python313` but isn't
 
 Then open http://127.0.0.1:5000. The database (`instance/todo.sqlite`) is created automatically on first run.
 
-Open **Sign up** to create an account, or click **Try the Demo** on the log in page to look around first. To delete every task and account and start fresh, run `.venv\Scripts\flask --app todo init-db --reset`.
+Open **Sign up** to create an account. To delete every task and account and start fresh, run `.venv\Scripts\flask --app todo init-db --reset`.
+
+To make a demo account with example tasks, run `.venv\Scripts\flask --app todo create-demo` and type a username and password (on PythonAnywhere: `.venv/bin/flask --app todo create-demo`). Run it again to put fresh examples back or change the password.
 
 Tasks made before accounts were added have no owner, so they no longer show up. When the app starts, it adds any missing columns to an old database automatically.
 
@@ -96,7 +98,7 @@ Tasks made before accounts were added have no owner, so they no longer show up. 
 | `todo/lists.py` | `GROUP BY`, `LEFT JOIN`, `SUM()` and `COALESCE()` to count tasks per list |
 | `todo/pages.py` | The `calendar` module, `Counter`, and working out streaks from dates |
 | `todo/profile.py` | Updating your own account: checking the current password before changing it, and three forms on one page |
-| `todo/demo.py` | Making example data from Python lists and dicts, random names with `secrets`, and deleting old rows with SQLite's `datetime()` |
+| `todo/demo.py` | A custom `flask` command with `click` options and a hidden password prompt, and example data built from Python lists and dicts |
 | `todo/quickadd.py` | **Parsing text** with regular expressions: named groups, whole-word matching, cutting matches out of a string |
 | `todo/recurrence.py` | **Date logic**: adding days, weeks and months, the 2nd Monday of a month, and stepping past old dates |
 | `todo/static/style.css` | **CSS**: variables, `color-mix()`, gradients, a responsive card grid with `auto-fill`, the same HTML in two layouts with `grid-template-areas`, and breakpoints |

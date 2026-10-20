@@ -34,14 +34,6 @@
     </div>
   </form>
 
-  {# One click into a private demo account full of examples (demo.py). #}
-  <p class="or" aria-hidden="true"><span>or</span></p>
-  <form class="demo-form" method="post" action="{{ url_for('demo.start') }}">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-    <button class="btn btn-demo" type="submit">Try the Demo</button>
-    <p class="hint">No sign-up needed. You get your own copy with example tasks, deleted after a day.</p>
-  </form>
-
   <p class="switch">New here? <a href="{{ url_for('auth.register') }}">Create an account</a>.</p>
 </div>
 {% endblock %}

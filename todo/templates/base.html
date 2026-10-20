@@ -75,9 +75,6 @@
       {# reminders.js puts a message here when a reminder comes due. #}
       <div id="reminders" data-url="{{ url_for('tasks.reminders') }}" aria-live="polite"></div>
     {% endif %}
-    {% if g.user and g.user.is_demo %}
-      <p class="demo-banner">You're trying the demo. <a href="{{ url_for('auth.register') }}">Sign up</a> to keep your own tasks.</p>
-    {% endif %}
 
     {% block content %}{% endblock %}
   </main>

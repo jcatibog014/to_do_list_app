@@ -51,5 +51,5 @@ def create_app(test_config=None):
     app.register_blueprint(lists.bp)
     app.register_blueprint(pages.bp)
     app.register_blueprint(profile.bp)
-    app.register_blueprint(demo.bp)
+    demo.init_app(app)  # the create-demo command
     return app

@@ -1359,30 +1359,3 @@ fieldset.field { padding: 0; border: 0; }
 .profile-stats p { margin: 0; font-size: 0.9rem; }
 .profile-stats strong { display: block; font-size: 1.3rem; }
 
-/* ---------- Try the Demo ---------- */
-
-/* A line with "or" in the middle: two lines drawn by ::before and ::after. */
-.or { display: flex; align-items: center; gap: 12px; margin: 18px 0 12px; color: var(--muted); font-size: 0.875rem; }
-.or::before,
-.or::after { content: ""; flex: 1; height: 1px; background: var(--border); }
-.demo-form { display: grid; gap: 6px; }
-.demo-form .hint { margin: 0; }
-.btn-demo {
-  width: 100%;
-  border: 2px solid var(--accent);
-  background: var(--surface);
-  color: var(--accent-strong);
-}
-.btn-demo:hover { background: color-mix(in srgb, var(--accent) 10%, var(--surface)); }
-
-.demo-banner {
-  margin: 0 0 14px;
-  padding: 10px 14px;
-  border: 1px dashed color-mix(in srgb, var(--accent) 45%, var(--border));
-  border-radius: var(--radius-small);
-  background: color-mix(in srgb, var(--accent) 8%, var(--surface));
-  color: var(--accent-strong);
-  font-size: 0.925rem;
-  font-weight: 600;
-  text-align: center;
-}
