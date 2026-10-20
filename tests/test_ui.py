@@ -188,3 +188,18 @@ def test_gator_is_the_default_theme_and_grape_is_still_there(client, post):
     assert '<span class="theme-name">Grape</span>' in html
     post("/profile/theme", {"theme": "grape", "appearance": "light"})
     assert 'data-theme="grape"' in client.get("/").get_data(as_text=True)
+
+
+def test_login_heading_is_inside_the_card(guest):
+    for url, heading in [("/login", "Log In"), ("/register", "Create an Account")]:
+        html = guest.get(url).get_data(as_text=True)
+        card = html[html.index('<form class="card"'):html.index("</form>")]
+        assert f'<h1 class="card-title">{heading}</h1>' in card
+        assert "alligator.”</p>" in html  # the tagline ends without an emoji
+        assert "🐊" not in html
+
+
+def test_login_error_shows_inside_the_card(guest, post):
+    html = post("/login", {"username": "nobody", "password": "nope nope"}).get_data(as_text=True)
+    card = html[html.index('<form class="card"'):html.index("</form>")]
+    assert "Incorrect username or password." in card

@@ -8,21 +8,18 @@
   <div class="auth-brand">
     <img src="{{ url_for('static', filename='logo.png') }}" alt="" width="96" height="96">
     <p class="auth-name">Later Gator</p>
-    <p class="hint">Get it done now, so you can say “see you later, alligator.” 🐊</p>
+    <p class="hint">Get it done now, so you can say “see you later, alligator.”</p>
   </div>
-
-  <div class="page-head">
-    <h1>Create an Account</h1>
-  </div>
-
-  {% if errors %}
-    <p class="flash flash-error" role="alert">
-      Please fix {{ 'the error' if errors|length == 1 else 'the ' ~ errors|length ~ ' errors' }} below.
-    </p>
-  {% endif %}
 
   <form class="card" method="post">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    {# The heading and the error summary sit inside the card, with the form they belong to. #}
+    <h1 class="card-title">Create an Account</h1>
+    {% if errors %}
+      <p class="flash flash-error" role="alert">
+        Please fix {{ 'the error' if errors|length == 1 else 'the ' ~ errors|length ~ ' errors' }} below.
+      </p>
+    {% endif %}
 
     <div class="field{% if errors.username %} has-error{% endif %}">
       <label for="username">Username</label>
