@@ -7,18 +7,23 @@
    ========================================================================== */
 
 :root {
-  /* Theme colors: "Grape", the default. */
-  --accent: #5b4fe0;
-  --accent-strong: #4436c9;
-  --accent-2: #9333ea;
+  /* Theme colors: "Gator", the default, taken from the logo. A grassy
+     green fading into the deep green of the water, the gator's lime for
+     progress bars, and the check mark's coral for the + button. */
+  --accent: #2e7d4f;
+  --accent-strong: #1f5f3b;
+  --accent-2: #1d5446;
+  --progress: #b5e36b;  /* the fill of the progress bar on the banner */
+  --fab: #e8603f;       /* the floating + button */
 
-  /* Light look: a neutral off-white background, so the colorful cards pop. */
-  --bg: #f5f5f7;
+  /* Light look: a warm off-white background, like the cream around the
+     logo, so the colorful cards pop. */
+  --bg: #f6f4ee;
   --surface: #ffffff;
-  --surface-2: #f0f1f5;
-  --text: #171a2e;
-  --muted: #5c6378;
-  --border: #e3e5ec;
+  --surface-2: #efeee7;
+  --text: #17221c;
+  --muted: #59645d;
+  --border: #e3e1d8;
   --danger: #c81e1e;
   --warning: #a35200;
   --success: #15803d;
@@ -55,6 +60,13 @@
 /* Each one changes only the accent colors. The darker shades keep white
    text on buttons and banners easy to read. */
 
+/* Themes other than Gator use plain white for the progress bar, and the
+   theme's own gradient for the + button. */
+[data-theme]:not([data-theme="default"]) {
+  --progress: #ffffff;
+  --fab: linear-gradient(135deg, var(--accent), var(--accent-2));
+}
+[data-theme="grape"] { --accent: #5b4fe0; --accent-strong: #4436c9; --accent-2: #9333ea; --bg: #f5f5f7; }
 [data-theme="ocean"] { --accent: #0369a1; --accent-strong: #075985; --accent-2: #0f766e; --bg: #f3f6f8; }
 [data-theme="matcha"] { --accent: #2e7d32; --accent-strong: #1b5e20; --accent-2: #4d6b12; --bg: #f5f6f0; }
 [data-theme="sunset"] { --accent: #c2410c; --accent-strong: #9a3412; --accent-2: #be185d; --bg: #f8f4f2; }
@@ -335,7 +347,7 @@ input[type="radio"] { accent-color: var(--accent); width: 18px; height: 18px; }
   display: block;
   height: 100%;
   border-radius: inherit;
-  background: #fff;
+  background: var(--progress);
   transition: width 0.4s;
 }
 .day-bar.small { height: 8px; background: color-mix(in srgb, var(--tint, var(--accent)) 18%, var(--surface-2)); }
@@ -857,8 +869,8 @@ p.flash.flash-error:not(.toast) {
   height: 60px;
   border: 0;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--accent), var(--accent-2));
-  box-shadow: 0 10px 24px color-mix(in srgb, var(--accent) 40%, transparent);
+  background: var(--fab);
+  box-shadow: 0 10px 24px rgb(var(--shadow-color) / 0.25);
   color: #fff;
   font-size: 1.9rem;
   line-height: 1;
@@ -1109,11 +1121,12 @@ p.flash.flash-error:not(.toast) {
 
 .theme-picker,
 .appearance-picker { display: flex; flex-wrap: wrap; gap: 10px; margin: 0 0 16px; padding: 0; border: 0; }
+/* A grid keeps every theme tile the same size, even one alone on the last row. */
+.theme-picker { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
 .theme-picker legend,
 .appearance-picker legend { margin-bottom: 8px; font-weight: 700; }
 .theme-option {
   display: grid;
-  flex: 1 1 120px; /* share the row evenly */
   gap: 6px;
   justify-items: center;
   align-content: start;
@@ -1126,7 +1139,13 @@ p.flash.flash-error:not(.toast) {
 .theme-option:has(input:checked) { border-color: var(--accent); }
 .theme-option.locked { cursor: not-allowed; opacity: 0.6; }
 .theme-swatch { width: 64px; height: 36px; border-radius: 10px; }
-.theme-default .theme-swatch { background: linear-gradient(135deg, #5b4fe0, #9333ea); }
+/* Gator: the green gradient, with a coral dot like the logo's check mark. */
+.theme-default .theme-swatch {
+  background:
+    radial-gradient(circle at 78% 32%, #ff7b5c 0 6px, transparent 7px),
+    linear-gradient(135deg, #2e7d4f, #1d5446);
+}
+.theme-grape .theme-swatch { background: linear-gradient(135deg, #5b4fe0, #9333ea); }
 .theme-ocean .theme-swatch { background: linear-gradient(135deg, #0369a1, #0f766e); }
 .theme-matcha .theme-swatch { background: linear-gradient(135deg, #2e7d32, #4d6b12); }
 .theme-sunset .theme-swatch { background: linear-gradient(135deg, #c2410c, #be185d); }
@@ -1185,7 +1204,21 @@ fieldset.field { padding: 0; border: 0; }
 
 /* ---------- Log in and sign up ---------- */
 
-.auth { max-width: 420px; margin: 16px auto 0; }
+/* Log in and sign up: one centered column, in the middle of the screen.
+   min-height plus justify-content: center puts it halfway down; the
+   220px is roughly the top bar and the page's padding. */
+.auth {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  max-width: 420px;
+  min-height: calc(100vh - 220px);
+  margin: 0 auto;
+  text-align: center;
+}
+.auth .card { text-align: left; } /* the form itself reads best left-aligned */
+/* Left-aligned, so the heading starts on the same line as the field labels. */
+.card-title { margin: 0 0 20px; font-size: 1.5rem; }
 .auth .card { position: relative; overflow: hidden; padding-top: 30px; }
 .auth .card::before {
   content: "";
@@ -1195,7 +1228,7 @@ fieldset.field { padding: 0; border: 0; }
   background: linear-gradient(90deg, var(--accent), var(--accent-2));
 }
 .switch { margin-top: 16px; color: var(--muted); text-align: center; }
-.auth-brand { margin-bottom: 20px; text-align: center; }
+.auth-brand { display: grid; justify-items: center; margin-bottom: 18px; }
 .auth-brand img { border-radius: 24%; box-shadow: var(--shadow-big); }
 .auth-name { margin: 10px 0 2px; font-size: 1.6rem; font-weight: 800; letter-spacing: -0.02em; }
 .auth-brand .hint { margin: 0; }

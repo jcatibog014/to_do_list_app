@@ -8,17 +8,14 @@
   <div class="auth-brand">
     <img src="{{ url_for('static', filename='logo.png') }}" alt="" width="96" height="96">
     <p class="auth-name">Later Gator</p>
-    <p class="hint">Get it done now, so you can say “see you later, alligator.” 🐊</p>
+    <p class="hint">Get it done now, so you can say “see you later, alligator.”</p>
   </div>
-
-  <div class="page-head">
-    <h1>Log In</h1>
-  </div>
-
-  {% if error %}<p class="flash flash-error" role="alert">{{ error }}</p>{% endif %}
 
   <form class="card" method="post">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    {# The heading and any error sit inside the card, with the form they belong to. #}
+    <h1 class="card-title">Log In</h1>
+    {% if error %}<p class="flash flash-error" role="alert">{{ error }}</p>{% endif %}
 
     {# autocomplete tells password managers what each box is for. #}
     <div class="field">

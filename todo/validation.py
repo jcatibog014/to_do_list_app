@@ -41,7 +41,8 @@ SUBTASKS_MAX = 20
 # Color themes, and the best streak (days in a row with a task done) that
 # unlocks each one. A small reward for keeping at it.
 THEMES = {
-    "default": {"label": "Grape", "unlock": 0},
+    "default": {"label": "Gator", "unlock": 0},  # green, from the logo
+    "grape": {"label": "Grape", "unlock": 0},
     "ocean": {"label": "Ocean", "unlock": 0},
     "matcha": {"label": "Matcha", "unlock": 3},
     "sunset": {"label": "Sunset", "unlock": 7},

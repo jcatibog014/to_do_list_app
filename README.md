@@ -48,7 +48,7 @@ The home screen: a greeting with today's progress, list chips, quick add, and a 
 - **Focus mode**: one task at a time. Swipe right when it's done, left for later, up for tomorrow.
 - **Calendar**: a month of days with their tasks.
 - **Stats**: your streak, tasks done in the last 7 days, and progress per list.
-- **Profile**: pick a picture (an emoji), set the name your greeting uses, change your username or password, and choose a theme: Grape, Ocean, Matcha or Sunset, in light or dark. Matcha unlocks at a 3-day streak and Sunset at 7.
+- **Profile**: pick a picture (an emoji), set the name your greeting uses, change your username or password, and choose a theme: Gator (green, the default), Grape, Ocean, Matcha or Sunset, in light or dark. Matcha unlocks at a 3-day streak and Sunset at 7.
 - **Nice touches**: a greeting with today's progress bar, confetti when a task is done, a floating + button with a quick-add sheet, and a bottom bar on phones.
 - **Today view**: what's due today, plus anything late.
 - **Filter** the list with the tabs: All, Today, Active, Overdue and Completed. Each tab shows how many tasks it holds.
