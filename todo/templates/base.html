@@ -39,7 +39,8 @@
           {% for endpoint, icon, label, lit in nav_items %}
             <a class="nav-link{% if request.endpoint in lit %} active{% endif %}" href="{{ url_for(endpoint) }}"
                {% if request.endpoint in lit %}aria-current="page"{% endif %}>
-              <span aria-hidden="true">{{ icon }}</span> {{ label }}
+              {#- Words only up here. The phone's bottom bar shows the icons. -#}
+              {{ label }}
             </a>
           {% endfor %}
         </nav>

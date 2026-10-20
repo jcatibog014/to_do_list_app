@@ -160,3 +160,10 @@ def test_old_database_gets_the_new_columns(tmp_path):
         task_columns = {r["name"] for r in get_db().execute("PRAGMA table_info(tasks)")}
     assert (user["theme"], user["appearance"]) == ("default", "system")
     assert {"priority", "emoji", "doing"} <= task_columns
+
+
+def test_header_nav_is_words_only(client):
+    html = client.get("/").get_data(as_text=True)
+    nav = html[html.index('<nav class="main-nav"'):html.index("</nav>")]
+    links = re.findall(r'<a class="nav-link[^"]*"[^>]*>\s*(.*?)\s*</a>', nav, re.S)
+    assert links == ["Today", "Lists", "Calendar", "Profile"]
